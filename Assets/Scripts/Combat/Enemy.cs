@@ -2,50 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour, ICombatChar
+public class Enemy : CombatChar
 {
-    #region Instance data
-    protected int health;
-    protected int maxHealth;
-    protected int speed;
-    protected int maxSpeed;
-    #endregion
-
-    #region Properties
-    /// <summary>
-    /// Enemy's current health
-    /// </summary>
-    public int Health
-    {
-        get { return health; }
-        set { health = value; }
-    }
-    /// <summary>
-    /// Enemy's max health
-    /// </summary>
-    public int MaxHealth
-    {
-        get { return maxHealth; }
-        set { maxHealth = value; }
-    }
-    /// <summary>
-    /// Enemy's current speed
-    /// </summary>
-    public int Speed
-    {
-        get { return speed; }
-        set { speed = value; }
-    }
-    /// <summary>
-    /// Enemy's max speed
-    /// </summary>
-    public int MaxSpeed
-    {
-        get { return maxSpeed; }
-        set { maxSpeed = value; }
-    }
-    #endregion
-
     // Use this for initialization
     void Start ()
     {
@@ -65,10 +23,10 @@ public class Enemy : MonoBehaviour, ICombatChar
     /// Calculates the initiative of the enemy
     /// </summary>
     /// <returns>The calculated initiative value</returns>
-    public int GetInitiative()
+    public override int GetInitiative()
     {
         //determine the enemy's initiative
-        //we could just do a set value per enemy instance
+        //we could just do a set value per enemy
 
         //for testing purposes returns 0 (1 less than playable characters)
         return 0;

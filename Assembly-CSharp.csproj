@@ -51,8 +51,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Scripts\Combat\CombatChar.cs" />
      <Compile Include="Assets\Scripts\Combat\Enemy.cs" />
-     <Compile Include="Assets\Scripts\Combat\ICombatChar.cs" />
      <Compile Include="Assets\Scripts\Combat\PlayableChar.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
