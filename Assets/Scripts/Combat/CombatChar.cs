@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CombatChar : MonoBehaviour
+public abstract class CombatChar : MonoBehaviour
 {
     #region Instance data
     protected int health;
@@ -47,12 +47,8 @@ public class CombatChar : MonoBehaviour
     #endregion
 
     // Use this for initialization
-    void Start ()
+    protected virtual void Start ()
     {
-        health = 10;
-        maxHealth = 10;
-        speed = 5;
-        maxSpeed = 5;
     }
 
     // Update is called once per frame
@@ -61,16 +57,6 @@ public class CombatChar : MonoBehaviour
 		
 	}
 
-    /// <summary>
-    /// Calculates the initiative of the character
-    /// </summary>
-    /// <returns>The calculated initiative value</returns>
-    public virtual int GetInitiative()
-    {
-        //do some stuff to get an initiative value
-
-        //testing value
-        return 1;
-    }
+    public abstract int GetInitiative();
 
 }

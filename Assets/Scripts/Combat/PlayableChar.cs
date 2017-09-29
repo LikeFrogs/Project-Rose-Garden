@@ -39,7 +39,7 @@ public class PlayableChar : CombatChar
 
 
     // Use this for initialization
-    void Start ()
+    protected override void Start ()
     {
         //default testing values
         health = 10;
@@ -57,4 +57,15 @@ public class PlayableChar : CombatChar
 		
 	}
 
+    /// <summary>
+    /// Calculates the initiative of the character
+    /// </summary>
+    /// <returns>The calculated initiative value</returns>
+    public override int GetInitiative()
+    {
+        //do some stuff to get an initiative value
+
+        //testing value
+        return 1;
+    }
 }
