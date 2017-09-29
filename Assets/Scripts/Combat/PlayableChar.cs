@@ -54,7 +54,27 @@ public class PlayableChar : CombatChar
 	// Update is called once per frame
 	void Update ()
     {
-		
+        Vector3 pos = transform.position;
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            pos += Vector3.right;
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            //Vector3 test = new Vector3(0, -32);
+            pos += Vector3.down;
+        }
+        else if (Input.GetKeyDown(KeyCode.A))
+        {
+            pos += Vector3.left * 32;
+        }
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            pos += Vector3.up * 32;
+        }
+
+        transform.position = Vector3.MoveTowards(transform.position, pos, Time.deltaTime * 32);
 	}
 
     /// <summary>
