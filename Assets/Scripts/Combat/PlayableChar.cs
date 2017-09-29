@@ -7,6 +7,8 @@ public class PlayableChar : MonoBehaviour, ICombatChar
     #region Instance data
     protected int health;
     protected int maxHealth;
+    protected int speed;
+    protected int maxSpeed;
     protected int strength;
     protected int dexterity;
     protected int intelligence;
@@ -28,6 +30,22 @@ public class PlayableChar : MonoBehaviour, ICombatChar
     {
         get { return maxHealth; }
         set { maxHealth = value; }
+    }
+    /// <summary>
+    /// Character's movement speed
+    /// </summary>
+    public int Speed
+    {
+        get { return speed; }
+        set { speed = value; }
+    }
+    /// <summary>
+    /// Character's max speed
+    /// </summary>
+    public int MaxSpeed
+    {
+        get { return maxSpeed; }
+        set { maxSpeed = value; }
     }
     /// <summary>
     /// Character's strength. Used for physical damage
@@ -65,6 +83,8 @@ public class PlayableChar : MonoBehaviour, ICombatChar
         strength = 12;
         dexterity = 12;
         intelligence = 12;
+        speed = 5;
+        maxSpeed = 5;
 	}
 	
 	// Update is called once per frame

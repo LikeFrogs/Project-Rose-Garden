@@ -9,6 +9,10 @@ interface ICombatChar
         get;
         set;
     }
+    int Speed
+    {
+        get;
+    }
 
     int GetInitiative();
 }

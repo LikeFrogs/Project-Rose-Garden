@@ -7,6 +7,8 @@ public class Enemy : MonoBehaviour, ICombatChar
     #region Instance data
     protected int health;
     protected int maxHealth;
+    protected int speed;
+    protected int maxSpeed;
     #endregion
 
     #region Properties
@@ -26,6 +28,22 @@ public class Enemy : MonoBehaviour, ICombatChar
         get { return maxHealth; }
         set { maxHealth = value; }
     }
+    /// <summary>
+    /// Enemy's current speed
+    /// </summary>
+    public int Speed
+    {
+        get { return speed; }
+        set { speed = value; }
+    }
+    /// <summary>
+    /// Enemy's max speed
+    /// </summary>
+    public int MaxSpeed
+    {
+        get { return maxSpeed; }
+        set { maxSpeed = value; }
+    }
     #endregion
 
     // Use this for initialization
@@ -34,6 +52,8 @@ public class Enemy : MonoBehaviour, ICombatChar
         //default testing values
         health = 10;
         maxHealth = 10;
+        speed = 0;
+        maxSpeed = 0;
 	}
 	
 	// Update is called once per frame
