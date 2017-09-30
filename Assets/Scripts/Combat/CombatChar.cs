@@ -59,4 +59,5 @@ public abstract class CombatChar : MonoBehaviour
 
     public abstract int GetInitiative();
 
+    public abstract IEnumerator TakeTurn();
 }

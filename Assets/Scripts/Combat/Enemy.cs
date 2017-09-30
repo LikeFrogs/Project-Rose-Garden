@@ -32,4 +32,10 @@ public class Enemy : CombatChar
         //for testing purposes returns 0 (1 less than playable characters)
         return 0;
     }
+
+    public override IEnumerator TakeTurn()
+    {
+        //run the enemy's AI here
+        yield return null;
+    }
 }
