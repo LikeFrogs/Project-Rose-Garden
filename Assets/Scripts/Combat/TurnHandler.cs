@@ -1,22 +1,24 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEditor;
 
 public class TurnHandler : ScriptableObject
 {
     /// <summary>
-    /// Initializes a character in the scene
+    /// Sorts list of combat characters by their "GetIniative" value
     /// </summary>
-    /// <param name="character"></param>
-    public void InitCharacter(CombatChar character)
+    /// <param name="charList">List of combat characters</param>
+    /// <returns>Sorted list of combat characters</returns>
+    public List<CombatChar> SortInitiative(List<CombatChar> charList)
     {
+        charList.Sort((x, y) => x.GetInitiative().CompareTo(y.GetInitiative()));
 
+        return charList;
     }
 
-    /// <summary>
-    /// Sorts the a list of CombatChar objects by initiative
-    /// </summary>
-    public void SortInitiative()
+    public void NextTurn(List<CombatChar> charList)
     {
-        
+        SortInitiative(charList);
+
     }
 }
