@@ -46,8 +46,9 @@ public abstract class CombatChar : MonoBehaviour
     }
     #endregion
 
+    //we can probably just delete this since we're initializing everything in the child classes but im not totally sure so it stays here for now...
     // Use this for initialization
-    protected virtual void Start ()
+    protected virtual void Awake ()
     {
     }
 

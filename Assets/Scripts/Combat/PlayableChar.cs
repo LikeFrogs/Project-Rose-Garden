@@ -40,7 +40,7 @@ public class PlayableChar : CombatChar
 
 
     // Use this for initialization
-    protected override void Start ()
+    protected override void Awake ()
     {
         //default testing values
         health = 10;
@@ -106,6 +106,8 @@ public class PlayableChar : CombatChar
         Debug.Log("Running TakeTurn");
         movePhase = true;
 
+        //run something here to calculate and create a visual of where the player can move this turn (based on speed)
+
         while (movePhase)
         {
             yield return null;
@@ -116,8 +118,9 @@ public class PlayableChar : CombatChar
                 //within that method we'll set movePhase to false and bring up the menu to wait for user input
                 //if the user selects an action we'll run that and leave movePhase false
                 //if they back out we'll set movePhase back to true and return to this while loop and wait for the user to open the action menu again
+                //we will remove the move area visual once the player has confirmed their action for that turn
 
-                //for testing/before we get the action menu up and running I'm just going to have pressing y end your turn\
+                //for testing/before we get the action menu up and running I'm just going to have pressing y end your turn
                 movePhase = false;
             }
         }

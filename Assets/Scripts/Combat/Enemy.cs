@@ -5,7 +5,7 @@ using UnityEngine;
 public class Enemy : CombatChar
 {
     // Use this for initialization
-    protected override void Start ()
+    protected override void Awake ()
     {
         //default testing values
         health = 10;
