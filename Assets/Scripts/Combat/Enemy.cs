@@ -38,4 +38,9 @@ public class Enemy : CombatChar
         //run the enemy's AI here
         yield return null;
     }
+
+    public override void DoAction()
+    {
+        throw new System.NotImplementedException();
+    }
 }

@@ -61,4 +61,7 @@ public abstract class CombatChar : MonoBehaviour
     public abstract int GetInitiative();
 
     public abstract IEnumerator TakeTurn();
+
+    //Filler action for stuff to be done by the object on new turn
+    public abstract void DoAction();
 }

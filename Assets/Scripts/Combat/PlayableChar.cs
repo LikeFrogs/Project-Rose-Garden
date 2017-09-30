@@ -125,7 +125,12 @@ public class PlayableChar : CombatChar
             }
         }
     }
-    
+
+    public override void DoAction()
+    {
+        throw new System.NotImplementedException();
+    }
+
     ////not really ready to use yet
     //private void ActionMenu()
     //{
