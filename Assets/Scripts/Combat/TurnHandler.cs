@@ -17,6 +17,15 @@ public class TurnHandler : ScriptableObject
     }
 
     /// <summary>
+    /// Updates scene objects
+    /// </summary>
+    public void UpdateScene()
+    {
+        //Do scene stuff here
+        //Parameters?
+    }
+
+    /// <summary>
     /// Main method for TurnHandler, Handles the beginning of a new turn
     /// </summary>
     /// <param name="charList">List of characters</param>
@@ -24,6 +33,9 @@ public class TurnHandler : ScriptableObject
     {
         //Sort charList by initiative
         SortInitiative(charList);
+
+        //Update scene stuff
+        UpdateScene();
 
         //Iterate through charList, call DoAction for each in order of initiative
         for (int i = 0; i < charList.Count; i++)
