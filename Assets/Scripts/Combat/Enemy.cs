@@ -5,7 +5,7 @@ using UnityEngine;
 public class Enemy : CombatChar
 {
     // Use this for initialization
-    protected override void Start ()
+    protected override void Awake ()
     {
         //default testing values
         health = 10;
@@ -31,5 +31,11 @@ public class Enemy : CombatChar
 
         //for testing purposes returns 0 (1 less than playable characters)
         return 0;
+    }
+
+    public override IEnumerator TakeTurn()
+    {
+        //run the enemy's AI here
+        yield return null;
     }
 }
