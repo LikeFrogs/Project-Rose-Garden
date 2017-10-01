@@ -9,6 +9,8 @@ public class PlayableChar : CombatChar
     protected int dexterity;
     protected int intelligence;
     protected bool movePhase;
+    
+    bool isMoving;
     #endregion
 
     #region Properties
@@ -51,42 +53,67 @@ public class PlayableChar : CombatChar
         dexterity = 12;
         intelligence = 12;
         movePhase = false;
+        isMoving = false;
 	}
 	
 	// Update is called once per frame
 	void Update ()
     {
         //until we get an object to handle passing the turn order between characters
-        //we're just going to start a turn when you press Q
+        //we're just going to start a turn when you press q
         if (Input.GetKeyDown(KeyCode.Q))
         {
             StartCoroutine("TakeTurn");
         }
 
-        Vector3 pos = transform.position;
+        //only move/look for move input during the move phase of a player's turn
         if (movePhase)
         {
-            if (Input.GetKeyDown(KeyCode.D))
+            //when the player is not actively moving looks for input in x and y directions
+            //and sets the the lesser of the two to zero so that the player only moves 
+            //in one direction at a time
+            Vector2 input;
+            if (!isMoving)
             {
-                pos += Vector3.right;
-            }
-            else if (Input.GetKeyDown(KeyCode.S))
-            {
-                //Vector3 test = new Vector3(0, -32);
-                pos += Vector3.down;
-            }
-            else if (Input.GetKeyDown(KeyCode.A))
-            {
-                pos += Vector3.left;
-            }
-            else if (Input.GetKeyDown(KeyCode.W))
-            {
-                pos += Vector3.up;
+                input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+
+                if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+                {
+                    input.y = 0;
+                }
+                else
+                {
+                    input.x = 0;
+                }
+
+                if (input != Vector2.zero)
+                {
+                    StartCoroutine(Move(input));
+                }
             }
         }
+    }
 
-        //transform.position = Vector3.MoveTowards(transform.position, pos, Time.deltaTime * 32);
-        transform.position = pos;
+    //Smoothly moves the player from their current position to a position one tile in the direction of input
+    private IEnumerator Move(Vector2 input)
+    {
+        isMoving = true; //while running this routine no new input is accepted
+        Vector3 startPos = transform.position;
+        float t = 0;
+        //this vector equals the player's original position + 1 in the direction they are moving
+        Vector3 endPos = new Vector3(startPos.x + System.Math.Sign(input.x), startPos.y + System.Math.Sign(input.y), startPos.z);
+
+        //smoothly moves the player across the distance with lerp
+        while(t < 1f)
+        {
+            t += Time.deltaTime * 5;
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        //when done moving allow more input to be received
+        isMoving = false;
+        yield return null;
     }
 
     /// <summary>
@@ -103,7 +130,6 @@ public class PlayableChar : CombatChar
 
     public override IEnumerator TakeTurn()
     {
-        Debug.Log("Running TakeTurn");
         movePhase = true;
 
         //run something here to calculate and create a visual of where the player can move this turn (based on speed)
