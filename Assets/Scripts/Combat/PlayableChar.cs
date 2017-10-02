@@ -146,7 +146,7 @@ public class PlayableChar : CombatChar
                 //if they back out we'll set movePhase back to true and return to this while loop and wait for the user to open the action menu again
                 //we will remove the move area visual once the player has confirmed their action for that turn
 
-                //for testing/before we get the action menu up and running I'm just going to have pressing y end your turn
+                //for testing/before we get the action menu up and running I'm just going to have pressing q end your turn
                 movePhase = false;
             }
         }
