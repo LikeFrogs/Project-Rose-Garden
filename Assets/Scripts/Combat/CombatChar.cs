@@ -9,6 +9,7 @@ public abstract class CombatChar : MonoBehaviour
     protected int maxHealth;
     protected int speed;
     protected int maxSpeed;
+    protected bool finishedTurn;
     #endregion
 
     #region Properties
@@ -44,6 +45,14 @@ public abstract class CombatChar : MonoBehaviour
         get { return maxSpeed; }
         set { maxSpeed = value; }
     }
+    /// <summary>
+    /// This bool will be set to true at the end of a character's turn.
+    /// This will be used to tell the turn handler to move on to the next turn.
+    /// </summary>
+    public bool FinishedTurn
+    {
+        get { return finishedTurn; }
+    }
     #endregion
 
     //we can probably just delete this since we're initializing everything in the child classes but im not totally sure so it stays here for now...
@@ -58,8 +67,12 @@ public abstract class CombatChar : MonoBehaviour
 		
 	}
 
+    //calculates initiative for the character for the turn
+    //implemented differently in PCs and NPCs
     public abstract int GetInitiative();
 
+    //coroutine that handles the entire turn of a character
+    //implemented differently in PCs and NPCs
     public abstract IEnumerator TakeTurn();
 
     //Filler action for stuff to be done by the object on new turn

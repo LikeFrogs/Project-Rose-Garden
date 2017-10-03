@@ -54,18 +54,12 @@ public class PlayableChar : CombatChar
         intelligence = 12;
         movePhase = false;
         isMoving = false;
+        finishedTurn = false;
 	}
 	
 	// Update is called once per frame
 	void Update ()
     {
-        //until we get an object to handle passing the turn order between characters
-        //we're just going to start a turn when you press q
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            StartCoroutine("TakeTurn");
-        }
-
         //only move/look for move input during the move phase of a player's turn
         if (movePhase)
         {
@@ -130,6 +124,7 @@ public class PlayableChar : CombatChar
 
     public override IEnumerator TakeTurn()
     {
+        finishedTurn = false;
         movePhase = true;
 
         //run something here to calculate and create a visual of where the player can move this turn (based on speed)
@@ -150,11 +145,12 @@ public class PlayableChar : CombatChar
                 movePhase = false;
             }
         }
+        finishedTurn = true;
     }
 
     public override void DoAction()
     {
-        throw new System.NotImplementedException();
+        StartCoroutine("TakeTurn");
     }
 
     ////not really ready to use yet
