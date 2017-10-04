@@ -63,22 +63,21 @@ public class PlayableChar : CombatChar
         //only move/look for move input during the move phase of a player's turn
         if (movePhase)
         {
-            //when the player is not actively moving looks for input in x and y directions
-            //and sets the the lesser of the two to zero so that the player only moves 
-            //in one direction at a time
+            //when the player is not actively moving looks for input in x and y directions and calls the move coroutine
             Vector2 input;
             if (!isMoving)
             {
                 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
 
-                if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
-                {
-                    input.y = 0;
-                }
-                else
-                {
-                    input.x = 0;
-                }
+                ////the following code disables diagonal movement
+                //if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+                //{
+                //    input.y = 0;
+                //}
+                //else
+                //{
+                //    input.x = 0;
+                //}
 
                 if (input != Vector2.zero)
                 {
@@ -93,14 +92,26 @@ public class PlayableChar : CombatChar
     {
         isMoving = true; //while running this routine no new input is accepted
         Vector3 startPos = transform.position;
-        float t = 0;
+        float t = 0; //time
         //this vector equals the player's original position + 1 in the direction they are moving
         Vector3 endPos = new Vector3(startPos.x + System.Math.Sign(input.x), startPos.y + System.Math.Sign(input.y), startPos.z);
+
+        int speed = 5;
+        if(input.x != 0  && input.y != 0)//diagonal movement needs to take longer
+        {
+            speed = 4;
+        }
+
+        //don't move into that one yellow square
+        if (endPos.x == 0 && endPos.y == -2)
+        {
+            t = 1f;
+        }
 
         //smoothly moves the player across the distance with lerp
         while(t < 1f)
         {
-            t += Time.deltaTime * 5;
+            t += Time.deltaTime * speed;
             transform.position = Vector3.Lerp(startPos, endPos, t);
             yield return null;
         }
@@ -124,6 +135,7 @@ public class PlayableChar : CombatChar
 
     public override IEnumerator TakeTurn()
     {
+        //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
         movePhase = true;
 

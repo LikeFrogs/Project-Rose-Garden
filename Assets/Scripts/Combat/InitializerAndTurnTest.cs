@@ -30,6 +30,7 @@ public class InitializerAndTurnTest : MonoBehaviour
         for (int i = 0; i < charList.Count; i++)
         {
             ((PlayableChar)charList[i]).DoAction();
+            //waits until the character's turn ends to progress to the next object in the list
             while (!charList[i].FinishedTurn){ yield return null; }
             //restarts the loop at the end of the turn
             if(i == charList.Count - 1)
