@@ -11,6 +11,7 @@ public class PlayableChar : CombatChar
     protected bool movePhase;
     
     bool isMoving;
+    List<Vector3> moveRange;
     #endregion
 
     #region Properties
@@ -55,6 +56,8 @@ public class PlayableChar : CombatChar
         movePhase = false;
         isMoving = false;
         finishedTurn = false;
+
+        moveRange = new List<Vector3>();
 	}
 	
 	// Update is called once per frame
@@ -102,11 +105,11 @@ public class PlayableChar : CombatChar
             speed = 4;
         }
 
-        //don't move into that one yellow square
-        if (endPos.x == 0 && endPos.y == -2)
-        {
-            t = 1f;
-        }
+        //will eventually prevent player from moving into unreachable squares
+        //if (!moveRange.Contains(input))
+        //{
+        //    t = 1f;
+        //}
 
         //smoothly moves the player across the distance with lerp
         while(t < 1f)
@@ -133,13 +136,31 @@ public class PlayableChar : CombatChar
         return 1;
     }
 
+    /// <summary>
+    /// Handles the entire turn for playable characters
+    /// </summary>
+    /// <returns></returns>
     public override IEnumerator TakeTurn()
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
-        movePhase = true;
 
-        //run something here to calculate and create a visual of where the player can move this turn (based on speed)
+        //this for loop runs the inner functions on every square that would be within a character's unimpeded movement range
+        //the calculations in the middle determine if the square can actually be reached and if so adds it to moveRange
+        for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
+        {
+            for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
+            {
+                Vector3 test = new Vector3(x, y);
+                if (Node.CheckSquare(transform.position, test, speed))
+                {
+                    moveRange.Add(test);
+                }
+            }
+        }
+
+        //turns on player movement
+        movePhase = true;
 
         while (movePhase)
         {
@@ -160,6 +181,7 @@ public class PlayableChar : CombatChar
         finishedTurn = true;
     }
 
+    //starts turn
     public override void DoAction()
     {
         StartCoroutine("TakeTurn");
