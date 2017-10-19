@@ -40,7 +40,7 @@ public class TurnHandler : ScriptableObject
         //Iterate through charList, call DoAction for each in order of initiative
         for (int i = 0; i < charList.Count; i++)
         {
-            charList[i].DoAction();
+            charList[i].BeginTurn();
         }
     }
 }

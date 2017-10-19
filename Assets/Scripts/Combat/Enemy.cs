@@ -39,7 +39,7 @@ public class Enemy : CombatChar
         yield return null;
     }
 
-    public override void DoAction()
+    public override void BeginTurn()
     {
         throw new System.NotImplementedException();
     }

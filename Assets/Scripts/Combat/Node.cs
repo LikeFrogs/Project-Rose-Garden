@@ -4,12 +4,52 @@ using UnityEngine;
 
 public class Node
 {
-    Node parentNode;
-    Vector3 pos;
-    int g;
-    int h;
-    int f;
+    #region Fields and Properties
+    private Node parentNode;
+    private Vector3 pos;
+    private int g;
+    private int h;
+    private int f;
 
+    /// <summary>
+    /// Gets the parent Node of this Node
+    /// </summary>
+    Node Parent
+    {
+        get { return parentNode; }
+    }
+    /// <summary>
+    /// Gets the Vector3 position of this Node
+    /// </summary>
+    Vector3 Position
+    {
+        get { return pos; }
+    }
+    /// <summary>
+    /// Returns the number of squares a character must move from the starting Node
+    /// to get to this Node
+    /// </summary>
+    int G
+    {
+        get { return g; }
+    }
+    /// <summary>
+    /// Gets the manhattan distance from this Node to the goal Node
+    /// </summary>
+    int H
+    {
+        get { return h; }
+    }
+    /// <summary>
+    /// Gets the total A* pathfinding cost of this Node (G + H values)
+    /// </summary>
+    int F
+    {
+        get { return f; }
+    }
+    #endregion
+
+    #region Constructors
     /// <summary>
     /// Initializes a default Node with ints at 0 and a parentNode that is null. Used to create a node for the origin square of the pathfinder
     /// </summary>
@@ -20,16 +60,135 @@ public class Node
         g = 0;
         h = 0;
         f = 0;
-        parentNode = null;
+        this.parentNode = null;
     }
-    //public Node(Vector3 startPos, Vector3 pos,)
-
-    public static bool CheckSquare(Vector3 startPos, Vector3 endPos, int speed)
+    /// <summary>
+    /// Creates a node with information needed in pathfinding
+    /// </summary>
+    /// <param name="startPos">The starting position of the pathfinding algorithm. Used to find h</param>
+    /// <param name="pos">The position of the Node being created</param>
+    /// <param name="parentNode">The new Node's parent Node</param>
+    public Node(Vector3 endPos, Vector3 pos, Node parentNode)
     {
-        //run the pathfinding algorithm from startPos to endPos and count the movement it takes to get there
-        //if greater than speed return false
+        this.pos = pos;
+        g = parentNode.G + 1;
+        h = System.Math.Abs((int)(endPos.x - pos.x)) + System.Math.Abs((int)(endPos.y - pos.y));
+        f = g + h;
+        this.parentNode = parentNode;
+    }
+    #endregion
 
-        //FindGameObjectsWithTag will be used to get obstacles and enemies that can't be moved through
-        return false;
+    /// <summary>
+    /// Determines if a character with a certain speed can reach endPos when starting from startPos
+    /// </summary>
+    /// <param name="startPos">The position the character would start from</param>
+    /// <param name="endPos">The square that the characteris attempting to reach</param>
+    /// <param name="speed">The speed of the character</param>
+    /// <returns>True if the character can reach endPos</returns>
+    public static bool CheckSquare(Vector3 startPos, Vector3 endPos, int speed) //additional boolean optional parameters can be added for special types of movement like flight
+    {
+        //will be set to true if a path is found to endPos
+        bool found = false;
+        
+        //creates a list of Vector3's that cannot be moved into
+        GameObject[] blocked = GameObject.FindGameObjectsWithTag("Blocking");
+        List<Vector3> blockedList = new List<Vector3>();
+        for(int i = 0; i < blocked.Length; i++)
+        {
+            blockedList.Add(blocked[i].transform.position);
+        }
+        blocked = GameObject.FindGameObjectsWithTag("Enemy");
+        for (int i = 0; i < blocked.Length; i++)
+        {
+            blockedList.Add(blocked[i].transform.position);
+        }
+        blocked = GameObject.FindGameObjectsWithTag("Interactable");
+        for (int i = 0; i < blocked.Length; i++)
+        {
+            blockedList.Add(blocked[i].transform.position);
+        }
+
+        //no need to run the algorithm if the destination is not a reachable square
+        if (blockedList.Contains(endPos))
+        {
+            return false;
+        }
+
+        //start the open list with the starting Node
+        Node startNode = new Node(startPos);
+        List<Node> openList = new List<Node> { startNode };
+        blockedList.Add(startNode.Position);
+        //start the closed list empty
+        List<Node> closedList = new List<Node>();
+
+        //the pathfinding algorithm continues as long as there are squares that can be tested in the open list
+        while(openList.Count != 0)
+        {
+            //searches for the Node in the open list with the lowest F value and adds it to the closed list
+            Node nextNode = openList[0];
+            for (int i = 0; i < openList.Count; i++)
+            {
+                if (openList[i].F < nextNode.F)
+                {
+                    nextNode = openList[i];
+                }
+            }
+            closedList.Add(nextNode);
+            openList.Remove(nextNode);
+            //if the node that was added was the ending position found is changed to true and we leave the while loop
+            if (nextNode.Position == endPos)
+            {
+                found = true;
+                break;
+            }
+
+            //adds Nodes to the open list for all positions that are unblocked and have not already been added to the list
+            //any Nodes that are added to the open list have their positions added to blockedList so they can't be readded in the future
+            Vector3 currentPos = closedList[closedList.Count - 1].Position;
+            if(!blockedList.Contains(new Vector3(currentPos.x - 1, currentPos.y)) && (new Vector3(currentPos.x - 1, currentPos.y)).x >= startPos.x - speed)
+            {
+                openList.Add(new Node(endPos, new Vector3(currentPos.x - 1, currentPos.y), closedList[closedList.Count - 1]));
+                blockedList.Add(new Vector3(currentPos.x - 1, currentPos.y));
+            }
+            if (!blockedList.Contains(new Vector3(currentPos.x + 1, currentPos.y)) && (new Vector3(currentPos.x + 1, currentPos.y)).x <= startPos.x + speed)
+            {
+                openList.Add(new Node(endPos, new Vector3(currentPos.x + 1, currentPos.y), closedList[closedList.Count - 1]));
+                blockedList.Add(new Vector3(currentPos.x + 1, currentPos.y));
+            }
+            if (!blockedList.Contains(new Vector3(currentPos.x, currentPos.y - 1)) && (new Vector3(currentPos.x, currentPos.y - 1)).y >= startPos.y - speed)
+            {
+                openList.Add(new Node(endPos, new Vector3(currentPos.x, currentPos.y - 1), closedList[closedList.Count - 1]));
+                blockedList.Add(new Vector3(currentPos.x, currentPos.y - 1));
+            }
+            if (!blockedList.Contains(new Vector3(currentPos.x, currentPos.y + 1)) && (new Vector3(currentPos.x, currentPos.y + 1)).y <= startPos.y + speed)
+            {
+                openList.Add(new Node(endPos, new Vector3(currentPos.x, currentPos.y + 1), closedList[closedList.Count - 1]));
+                blockedList.Add(new Vector3(currentPos.x, currentPos.y + 1));
+            }
+        }
+
+        //if there is no path, the square is unreachable
+        if (!found)
+        {
+            return false;
+        }
+
+        //creates a list that is only the Nodes in the shortest path from endPos to startPos
+        List<Node> path = new List<Node> { closedList[closedList.Count - 1] };
+        while(path[path.Count - 1].Parent != null)
+        {
+            path.Add(path[path.Count - 1].Parent);
+        }
+
+        //if the length of the path is less than or equal to the speed being checked then the square can be reached
+        //path.Count - 1 is used because the origin square is included in path, but should not be counted as move cost
+        if(path.Count - 1 <= speed)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

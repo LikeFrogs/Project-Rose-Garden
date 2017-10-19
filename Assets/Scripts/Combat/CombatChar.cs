@@ -5,11 +5,18 @@ using UnityEngine;
 public abstract class CombatChar : MonoBehaviour
 {
     #region Instance data
+    //character stats
     protected int health;
     protected int maxHealth;
     protected int speed;
     protected int maxSpeed;
+    protected int strength;
+    protected int dexterity;
+    protected int intelligence;
+
+    //control variables
     protected bool finishedTurn;
+    protected uint id;
     #endregion
 
     #region Properties
@@ -53,6 +60,37 @@ public abstract class CombatChar : MonoBehaviour
     {
         get { return finishedTurn; }
     }
+    /// <summary>
+    /// Character's strength. Used for physical damage
+    /// </summary>
+    public int Strength
+    {
+        get { return strength; }
+        set { strength = value; }
+    }
+    /// <summary>
+    /// Character's dexterity. Used for speed and initiative
+    /// </summary>
+    public int Dexterity
+    {
+        get { return dexterity; }
+        set { dexterity = value; }
+    }
+    /// <summary>
+    /// Character's intelligence. Used for magic damage
+    /// </summary>
+    public int Intelligence
+    {
+        get { return intelligence; }
+        set { intelligence = value; }
+    }
+    /// <summary>
+    /// Character's unique ID. Used for targetting
+    /// </summary>
+    public uint ID
+    {
+        get { return id; }
+    }
     #endregion
 
     //we can probably just delete this since we're initializing everything in the child classes but im not totally sure so it stays here for now...
@@ -76,5 +114,5 @@ public abstract class CombatChar : MonoBehaviour
     public abstract IEnumerator TakeTurn();
 
     //Filler action for stuff to be done by the object on new turn
-    public abstract void DoAction();
+    public abstract void BeginTurn();
 }
