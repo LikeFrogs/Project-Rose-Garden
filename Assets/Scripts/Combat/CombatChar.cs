@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class CombatChar : MonoBehaviour
 {
-    #region Instance data
+    #region Fields
     //character stats
     protected int health;
     protected int maxHealth;

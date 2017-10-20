@@ -7,7 +7,7 @@ using System.Linq;
 
 public class PlayableChar : CombatChar
 {
-    #region Instance data
+    #region Fields
     //control variables
     private bool movePhase;
     private bool isMoving;
@@ -115,23 +115,6 @@ public class PlayableChar : CombatChar
                 }
             }
         }
-
-        //if (selectingAttackTarget)
-        //{
-        //    //if (Input.GetButtonDown(""))
-        //    //{
-        //    //    Debug.Log("Attack confirmed");
-        //    //    selectingAttackTarget = false;
-        //    //}
-        //    //if (Input.GetKeyDown(KeyCode.R))
-        //    if(Input.GetButtonDown("Cancel"))
-        //    {
-        //        Debug.Log("Attack canceled");
-        //        selectingAttackTarget = false;
-        //        GameObject.Destroy(UICanvas);
-        //        ActionMenu();
-        //    }
-        //}
     }
 
     /// <summary>
@@ -343,16 +326,17 @@ public class PlayableChar : CombatChar
         yield break;
     }
 
-    //these are placeholder methods so that more than one button can be shown in the action menu for testing
-    //final action methods that require another menu should be coroutines
+    /// <summary>
+    /// Allows the character to make a melee attack
+    /// </summary>
     private IEnumerator Melee()
     {
-        waitingForAction = false;
+        waitingForAction = false; //this variable refers only to the main action menu
 
+        #region UI set-up
         //removes the action menu before bringing up the next one
         GameObject.Destroy(UICanvas);
         UICanvas = null;
-
         //creates a list of Vector3's with attackable targets
         List<Vector3> adjacentSquares = new List<Vector3>
         {
@@ -363,12 +347,9 @@ public class PlayableChar : CombatChar
         };
         List<Vector3> enemyPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.transform.position).ToList();
         List<Vector3> targets = (from pos in enemyPositions where adjacentSquares.Contains(pos) select pos).ToList(); //this is the final list with target positions
-
-
         //instantiates a canvas to display the action menu on
         GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
         Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
-
         List<GameObject> selectionIcons = new List<GameObject>();
         //creates UI for targetting
         for (int i = 0; i < targets.Count; i++)
@@ -378,26 +359,26 @@ public class PlayableChar : CombatChar
             Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
             selectionIcons[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
         }
-
         int selected = 0;
         Destroy(selectionIcons[selected]);
         selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
         selectionIcons[selected].transform.SetParent(canvasObject.transform);
         Vector3 selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
         selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
-
         canvas.worldCamera = Camera.main;
         canvas.planeDistance = 1;
         UICanvas = canvasObject;
-
-        selectingAttackTarget = true;
-        while (selectingAttackTarget)
+        #endregion
+        
+        //waits while the user is selecting a target
+        while (true)
         {
             yield return null;
 
             int lastSelected = selected;
             //selected = (int)Input.GetAxisRaw("Horizontal");
 
+            //changes which enemy is selected based on next and previous input
             if (Input.GetButtonDown("Next"))
             {
                 selected++;
@@ -406,11 +387,34 @@ public class PlayableChar : CombatChar
             {
                 selected--;
             }
-
-            if (Input.GetButtonDown("Submit"))
+            //redraws the UI if the selected enemy changes
+            if (lastSelected != selected)
             {
-                selectingAttackTarget = false;
+                if (selected < 0) { selected = selectionIcons.Count - 1; }
+                if (selected > selectionIcons.Count - 1) { selected = 0; }
+
+                canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
+                //sets the previously selected square to have selectable UI
+                Destroy(selectionIcons[lastSelected]);
+                selectionIcons[lastSelected] = Instantiate(GameController.SelectionPrefab);
+                selectionIcons[lastSelected].transform.SetParent(canvasObject.transform);
+                selectedPosition = Camera.main.WorldToScreenPoint(targets[lastSelected]);
+                selectionIcons[lastSelected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+                //sets the newly selected square to have selected UI
+                Destroy(selectionIcons[selected]);
+                selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
+                selectionIcons[selected].transform.SetParent(canvasObject.transform);
+                selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
+                selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+                //resets the camera
+                canvas.worldCamera = Camera.main;
+                canvas.planeDistance = 1;
+                UICanvas = canvasObject;
             }
+
+            //confirms attack target
+            if (Input.GetButtonDown("Submit")) { break; }
+            //returns to the previous action menu
             if (Input.GetButtonDown("Cancel"))
             {
                 selectingAttackTarget = false;
@@ -418,41 +422,22 @@ public class PlayableChar : CombatChar
                 ActionMenu();
                 yield break;
             }
-            if (lastSelected != selected) //redraws the UI if the selected enemy changes
-            {
-                if(selected < 0) { selected = selectionIcons.Count - 1; }
-                if(selected > selectionIcons.Count - 1) { selected = 0; }
-                Destroy(UICanvas);
-                UICanvas = null;
-
-                canvasObject = Instantiate(GameController.CanvasPrefab);
-                canvas = (Canvas)canvasObject.GetComponent("Canvas");
-                selectionIcons = new List<GameObject>();
-
-                for (int i = 0; i < targets.Count; i++)
-                {
-                    selectionIcons.Add(Instantiate(GameController.SelectionPrefab));
-                    selectionIcons[i].transform.SetParent(canvasObject.transform);
-                    Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
-                    selectionIcons[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
-                }
-                
-                Destroy(selectionIcons[selected]);
-                selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
-                selectionIcons[selected].transform.SetParent(canvasObject.transform);
-                selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
-                selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
-
-                canvas.worldCamera = Camera.main;
-                canvas.planeDistance = 1;
-                UICanvas = canvasObject;
-            }
         }
+
+        //removes UI as attack goes through
         Destroy(UICanvas);
+
+
+        //This is where the actual attack will take place
         Debug.Log("Yay! Attacking!");
+
+
+        //allows TakeTurn to finish
         actionCompleted = true;
     }
 
+    //these are placeholder methods so that more than one button can be shown in the action menu for testing
+    //final action methods that require another menu should be coroutines
     private IEnumerator f2()
     {
         System.Random rng = new System.Random();
