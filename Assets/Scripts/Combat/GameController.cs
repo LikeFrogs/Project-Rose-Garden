@@ -12,11 +12,15 @@ public class GameController : MonoBehaviour
     [SerializeField] GameObject purpleSquare;
     [SerializeField] GameObject canvas;
     [SerializeField] GameObject button;
+    [SerializeField] GameObject selectionSquare;
+    [SerializeField] GameObject selectedSquare;
 
     //static version of prefabs to be set in Awake()
     private static GameObject moveRangeSprite;
     private static GameObject buttonPrefab;
     private static GameObject canvasPrefab;
+    private static GameObject selectionPrefab;
+    private static GameObject selectedPrefab;
 
     //static prefab properties to be accessed by other classes
     /// <summary>
@@ -39,6 +43,20 @@ public class GameController : MonoBehaviour
     public static GameObject CanvasPrefab
     {
         get { return canvasPrefab; }
+    }
+    /// <summary>
+    /// Gets a UI element to higlight selectable enemies
+    /// </summary>
+    public static GameObject SelectionPrefab
+    {
+        get { return selectionPrefab; }
+    }
+    /// <summary>
+    /// Gets a UI element to higlight selectabled enemy
+    /// </summary>
+    public static GameObject SelectedPrefab
+    {
+        get { return selectedPrefab; }
     }
     #endregion
 
@@ -80,6 +98,8 @@ public class GameController : MonoBehaviour
         moveRangeSprite = purpleSquare;
         buttonPrefab = button;
         canvasPrefab = canvas;
+        selectionPrefab = selectionSquare;
+        selectedPrefab = selectedSquare;
 
         //begin play before any new scenes have been loaded
         sceneLoaded = false;

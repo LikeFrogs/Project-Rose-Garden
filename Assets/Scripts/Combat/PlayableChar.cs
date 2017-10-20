@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Linq;
 
 public class PlayableChar : CombatChar
 {
@@ -14,6 +15,9 @@ public class PlayableChar : CombatChar
     private bool actionCompleted;
     private GameObject UICanvas;
     private bool waitingForAction;
+
+    //action specific control variables
+    private bool selectingAttackTarget;
     #endregion
     
     // Use this for initialization
@@ -38,6 +42,8 @@ public class PlayableChar : CombatChar
         actionCompleted = false;
         UICanvas = null;
         waitingForAction = false;
+        //action specific control variables
+        selectingAttackTarget = false;
 	}
 	
 	// Update is called once per frame
@@ -58,8 +64,10 @@ public class PlayableChar : CombatChar
                 playerList.Remove(transform.position); //the character's own square should not be restricted
                 
                 //input for action menu
-                if(Input.GetAxisRaw("Submit") == 1 && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
+                if(Input.GetButtonDown("Submit") && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
                 {
+                    //character can't move while the menu is up
+                    movePhase = false;
                     ActionMenu();
                 }
             }
@@ -69,7 +77,7 @@ public class PlayableChar : CombatChar
         if (waitingForAction)
         {
             //if (Input.GetKeyDown(KeyCode.Escape))
-            if(Input.GetAxisRaw("Cancel") == 1)
+            if(Input.GetButtonDown("Cancel"))
             {
                 GameObject.Destroy(UICanvas);
                 UICanvas = null;
@@ -107,6 +115,23 @@ public class PlayableChar : CombatChar
                 }
             }
         }
+
+        //if (selectingAttackTarget)
+        //{
+        //    //if (Input.GetButtonDown(""))
+        //    //{
+        //    //    Debug.Log("Attack confirmed");
+        //    //    selectingAttackTarget = false;
+        //    //}
+        //    //if (Input.GetKeyDown(KeyCode.R))
+        //    if(Input.GetButtonDown("Cancel"))
+        //    {
+        //        Debug.Log("Attack canceled");
+        //        selectingAttackTarget = false;
+        //        GameObject.Destroy(UICanvas);
+        //        ActionMenu();
+        //    }
+        //}
     }
 
     /// <summary>
@@ -121,16 +146,10 @@ public class PlayableChar : CombatChar
         return 1;
     }
 
-    //placeholder method that starts turn
-    public override void BeginTurn()
-    {
-        StartCoroutine("TakeTurn");
-    }
-
     /// <summary>
     /// Handles the entire turn for playable characters
     /// </summary>
-    public override IEnumerator TakeTurn()
+    protected override IEnumerator TakeTurn()
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
@@ -173,10 +192,7 @@ public class PlayableChar : CombatChar
         //the specific actions to be performed are each their own functions
         //or coroutines depending on the complexity
         actionCompleted = false;
-        while (!actionCompleted)
-        {
-            yield return null;
-        }
+        while (!actionCompleted){ yield return null; }
 
         #region end of turn variable resetting
         //moveRange must be recalculated on every turn
@@ -241,9 +257,6 @@ public class PlayableChar : CombatChar
     /// </summary>
     private void ActionMenu()
     {
-        //don't move while the menu is up
-        movePhase = false;
-       
         //instantiates a canvas to display the action menu on
         GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
         Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
@@ -257,11 +270,12 @@ public class PlayableChar : CombatChar
             GameObject button = Instantiate(GameController.ButtonPrefab);
             button.transform.SetParent(canvasObject.transform);
             button.GetComponentInChildren<Text>().text = menuList[i];
-            int word = i;
-            button.GetComponent<Button>().onClick.AddListener(() => Invoke(menuList[word], 0f));
+            string word = menuList[i];
+            button.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(word));
             //position the button next to this character
             Vector3 buttonPosition = Camera.main.WorldToScreenPoint(new Vector3(transform.position.x + .5f, transform.position.y));
             button.GetComponent<RectTransform>().anchoredPosition = new Vector2(buttonPosition.x, buttonPosition.y - (30 * i));
+
             buttonList.Add(button);
         }
         //set the canvas camera
@@ -287,8 +301,8 @@ public class PlayableChar : CombatChar
     {
         List<string> actionList = new List<string>();
 
-        //checks for adjacent enemies for "Melee"
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        //checks to see if there are enemies in adjacent squares 
+        //and adds "Melee" to the action list if so
         List<Vector3> adjacentSquares = new List<Vector3>
         {
             new Vector3(transform.position.x - 1, transform.position.y),
@@ -296,6 +310,7 @@ public class PlayableChar : CombatChar
             new Vector3(transform.position.x, transform.position.y + 1),
             new Vector3(transform.position.x, transform.position.y - 1)
         };
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach(GameObject enemy in enemies)
         {
             if (adjacentSquares.Contains(enemy.transform.position))
@@ -322,26 +337,132 @@ public class PlayableChar : CombatChar
     /// <summary>
     /// Ends the character's turn without performing any other actions
     /// </summary>
-    private void End()
+    private IEnumerator End()
     {
         actionCompleted = true;
+        yield break;
     }
 
     //these are placeholder methods so that more than one button can be shown in the action menu for testing
     //final action methods that require another menu should be coroutines
-    private void Melee()
+    private IEnumerator Melee()
     {
-        System.Random rng = new System.Random();
-        Debug.Log("Melee attack!" + rng.Next(0, 500));
+        waitingForAction = false;
+
+        //removes the action menu before bringing up the next one
+        GameObject.Destroy(UICanvas);
+        UICanvas = null;
+
+        //creates a list of Vector3's with attackable targets
+        List<Vector3> adjacentSquares = new List<Vector3>
+        {
+            new Vector3(transform.position.x - 1, transform.position.y),
+            new Vector3(transform.position.x + 1, transform.position.y),
+            new Vector3(transform.position.x, transform.position.y + 1),
+            new Vector3(transform.position.x, transform.position.y - 1)
+        };
+        List<Vector3> enemyPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.transform.position).ToList();
+        List<Vector3> targets = (from pos in enemyPositions where adjacentSquares.Contains(pos) select pos).ToList(); //this is the final list with target positions
+
+
+        //instantiates a canvas to display the action menu on
+        GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
+        Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
+
+        List<GameObject> selectionIcons = new List<GameObject>();
+        //creates UI for targetting
+        for (int i = 0; i < targets.Count; i++)
+        {
+            selectionIcons.Add(Instantiate(GameController.SelectionPrefab));
+            selectionIcons[i].transform.SetParent(canvasObject.transform);
+            Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
+            selectionIcons[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
+        }
+
+        int selected = 0;
+        Destroy(selectionIcons[selected]);
+        selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
+        selectionIcons[selected].transform.SetParent(canvasObject.transform);
+        Vector3 selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
+        selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+
+        canvas.worldCamera = Camera.main;
+        canvas.planeDistance = 1;
+        UICanvas = canvasObject;
+
+        selectingAttackTarget = true;
+        while (selectingAttackTarget)
+        {
+            yield return null;
+
+            int lastSelected = selected;
+            //selected = (int)Input.GetAxisRaw("Horizontal");
+
+            if (Input.GetButtonDown("Next"))
+            {
+                selected++;
+            }
+            if (Input.GetButtonDown("Previous"))
+            {
+                selected--;
+            }
+
+            if (Input.GetButtonDown("Submit"))
+            {
+                selectingAttackTarget = false;
+            }
+            if (Input.GetButtonDown("Cancel"))
+            {
+                selectingAttackTarget = false;
+                Destroy(UICanvas);
+                ActionMenu();
+                yield break;
+            }
+            if (lastSelected != selected) //redraws the UI if the selected enemy changes
+            {
+                if(selected < 0) { selected = selectionIcons.Count - 1; }
+                if(selected > selectionIcons.Count - 1) { selected = 0; }
+                Destroy(UICanvas);
+                UICanvas = null;
+
+                canvasObject = Instantiate(GameController.CanvasPrefab);
+                canvas = (Canvas)canvasObject.GetComponent("Canvas");
+                selectionIcons = new List<GameObject>();
+
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    selectionIcons.Add(Instantiate(GameController.SelectionPrefab));
+                    selectionIcons[i].transform.SetParent(canvasObject.transform);
+                    Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
+                    selectionIcons[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
+                }
+                
+                Destroy(selectionIcons[selected]);
+                selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
+                selectionIcons[selected].transform.SetParent(canvasObject.transform);
+                selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
+                selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+
+                canvas.worldCamera = Camera.main;
+                canvas.planeDistance = 1;
+                UICanvas = canvasObject;
+            }
+        }
+        Destroy(UICanvas);
+        Debug.Log("Yay! Attacking!");
+        actionCompleted = true;
     }
-    private void f2()
+
+    private IEnumerator f2()
     {
         System.Random rng = new System.Random();
         Debug.Log("f2" + rng.Next(0, 500));
+        yield break;
     }
-    private void f3()
+    private IEnumerator f3()
     {
         System.Random rng = new System.Random();
         Debug.Log("f3" + rng.Next(0, 500));
+        yield break;
     }
 }

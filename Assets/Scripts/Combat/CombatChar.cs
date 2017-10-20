@@ -111,8 +111,11 @@ public abstract class CombatChar : MonoBehaviour
 
     //coroutine that handles the entire turn of a character
     //implemented differently in PCs and NPCs
-    public abstract IEnumerator TakeTurn();
+    protected abstract IEnumerator TakeTurn();
 
     //Filler action for stuff to be done by the object on new turn
-    public abstract void BeginTurn();
+    public void BeginTurn()
+    {
+        StartCoroutine("TakeTurn");
+    }
 }

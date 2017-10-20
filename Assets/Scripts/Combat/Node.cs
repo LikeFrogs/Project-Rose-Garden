@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class Node
 {
@@ -89,24 +90,12 @@ public class Node
     {
         //will be set to true if a path is found to endPos
         bool found = false;
-        
+
         //creates a list of Vector3's that cannot be moved into
-        GameObject[] blocked = GameObject.FindGameObjectsWithTag("Blocking");
-        List<Vector3> blockedList = new List<Vector3>();
-        for(int i = 0; i < blocked.Length; i++)
-        {
-            blockedList.Add(blocked[i].transform.position);
-        }
-        blocked = GameObject.FindGameObjectsWithTag("Enemy");
-        for (int i = 0; i < blocked.Length; i++)
-        {
-            blockedList.Add(blocked[i].transform.position);
-        }
-        blocked = GameObject.FindGameObjectsWithTag("Interactable");
-        for (int i = 0; i < blocked.Length; i++)
-        {
-            blockedList.Add(blocked[i].transform.position);
-        }
+        //add a new line for each new tag
+        List<Vector3> blockedList = (from gameObject in GameObject.FindGameObjectsWithTag("Blocking") select gameObject.transform.position).ToList();
+        blockedList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.transform.position).ToList());
+        blockedList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Interactable") select gameObject.transform.position).ToList());
 
         //no need to run the algorithm if the destination is not a reachable square
         if (blockedList.Contains(endPos))

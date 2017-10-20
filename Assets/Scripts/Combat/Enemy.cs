@@ -33,14 +33,19 @@ public class Enemy : CombatChar
         return 0;
     }
 
-    public override IEnumerator TakeTurn()
+    /// <summary>
+    /// Handles the entire turn for this enemy
+    /// </summary>
+    protected override IEnumerator TakeTurn()
     {
-        //run the enemy's AI here
-        yield return null;
-    }
+        //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
+        finishedTurn = false;
 
-    public override void BeginTurn()
-    {
-        throw new System.NotImplementedException();
+        yield return null;
+
+        Debug.Log("This enemy takes a turn!");
+
+        //this will cause the turn manager to begin the next turn
+        finishedTurn = true;
     }
 }
