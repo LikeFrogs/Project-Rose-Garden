@@ -13,10 +13,15 @@ public abstract class CombatChar : MonoBehaviour
     protected int strength;
     protected int dexterity;
     protected int intelligence;
+    protected int defense;
+    protected int resistance;
 
     //control variables
     protected bool finishedTurn;
-    protected uint id;
+    protected int id;
+
+    //private control variables
+    private bool takingDamage;
     #endregion
 
     #region Properties
@@ -53,14 +58,6 @@ public abstract class CombatChar : MonoBehaviour
         set { maxSpeed = value; }
     }
     /// <summary>
-    /// This bool will be set to true at the end of a character's turn.
-    /// This will be used to tell the turn handler to move on to the next turn.
-    /// </summary>
-    public bool FinishedTurn
-    {
-        get { return finishedTurn; }
-    }
-    /// <summary>
     /// Character's strength. Used for physical damage
     /// </summary>
     public int Strength
@@ -85,37 +82,97 @@ public abstract class CombatChar : MonoBehaviour
         set { intelligence = value; }
     }
     /// <summary>
+    /// Character's defense. Used to defend against physical attacks
+    /// </summary>
+    public int Defense
+    {
+        get { return defense; }
+        set { defense = value; }
+    }
+    /// <summary>
+    /// Character's resistance. Used to defend against magical attacks
+    /// </summary>
+    public int Resistance
+    {
+        get { return resistance; }
+        set { resistance = value; }
+    }
+    /// <summary>
     /// Character's unique ID. Used for targetting
     /// </summary>
-    public uint ID
+    public int ID
     {
         get { return id; }
     }
-    #endregion
 
-    //we can probably just delete this since we're initializing everything in the child classes but im not totally sure so it stays here for now...
-    // Use this for initialization
-    protected virtual void Awake ()
+    /// <summary>
+    /// This bool will be set to true at the end of a character's turn.
+    /// This will be used to tell the turn handler to move on to the next turn.
+    /// </summary>
+    public bool FinishedTurn
     {
+        get { return finishedTurn; }
     }
-
-    // Update is called once per frame
-    void Update ()
+    /// <summary>
+    /// Gets true when taking damage and false otherwise
+    /// </summary>
+    public bool TakingDamage
     {
-		
-	}
+        get { return takingDamage; }
+    }
+    #endregion
 
     //calculates initiative for the character for the turn
     //implemented differently in PCs and NPCs
     public abstract int GetInitiative();
 
-    //coroutine that handles the entire turn of a character
-    //implemented differently in PCs and NPCs
+    /// <summary>
+    /// Handles a character's turn
+    /// </summary>
     protected abstract IEnumerator TakeTurn();
 
-    //Filler action for stuff to be done by the object on new turn
+    /// <summary>
+    /// Starts the coroutine that handles a character's turn
+    /// </summary>
     public void BeginTurn()
     {
         StartCoroutine("TakeTurn");
+    }
+
+    public void BeginTakeDamage(int damage)
+    {
+        StartCoroutine(TakeDamage(damage));
+    }
+
+    /// <summary>
+    /// Runs when a character takes damage
+    /// </summary>
+    /// <param name="damage">The amount of damage to take</param>
+    public IEnumerator TakeDamage(int damage)
+    {
+        //this tells the attacking character to pause while this method happens
+        takingDamage = true;
+
+        //takes the damage
+        health -= damage;
+        if(health < 0) { health = 0; }
+
+        //play the taking damage animation here and make sure it takes the correct amount of time
+        //yield return null;
+
+        if(health == 0)
+        {
+            //run the death animation here
+
+            Debug.Log("ooooooookay");
+
+            //GameObject thisCharacter = this.GetComponent<GameObject>();
+            Destroy(gameObject);
+        }
+
+        //resume the attacking object's turn
+        takingDamage = false;
+
+        yield break;
     }
 }

@@ -5,9 +5,16 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
 
+enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
+
 public class PlayableChar : CombatChar
 {
     #region Fields
+    //character stats
+    private PlayerClass playerClass;
+    private List<string> abilityList;
+    private List<string> spellList;
+
     //control variables
     private bool movePhase;
     private bool isMoving;
@@ -15,26 +22,26 @@ public class PlayableChar : CombatChar
     private bool actionCompleted;
     private GameObject UICanvas;
     private bool waitingForAction;
-
-    //action specific control variables
-    private bool selectingAttackTarget;
     #endregion
     
     // Use this for initialization
     //all ints are default testing values for the moment
-    protected override void Awake ()
+    protected void Awake ()
     {
         //inherited stats
         health = 10;
         maxHealth = 10;
         speed = 6;
         maxSpeed = 6;
+        strength = 10;
+        dexterity = 10;
+        intelligence = 10;
+        defense = 5;
+        resistance = 5;
         //inherited control variable
         finishedTurn = false;
-        //stats
-        strength = 12;
-        dexterity = 12;
-        intelligence = 12;
+        //ID???
+
         //control variables
         movePhase = false;
         isMoving = false;
@@ -42,8 +49,10 @@ public class PlayableChar : CombatChar
         actionCompleted = false;
         UICanvas = null;
         waitingForAction = false;
-        //action specific control variables
-        selectingAttackTarget = false;
+        //character stats
+        playerClass = PlayerClass.Agent;
+        abilityList = new List<string>();
+        spellList = new List<string>();
 	}
 	
 	// Update is called once per frame
@@ -284,8 +293,7 @@ public class PlayableChar : CombatChar
     {
         List<string> actionList = new List<string>();
 
-        //checks to see if there are enemies in adjacent squares 
-        //and adds "Melee" to the action list if so
+        //checks to see if there are enemies in adjacent squares and adds "Melee" to the action list if so
         List<Vector3> adjacentSquares = new List<Vector3>
         {
             new Vector3(transform.position.x - 1, transform.position.y),
@@ -302,17 +310,21 @@ public class PlayableChar : CombatChar
                 break;
             }
         }
-        
 
-        //check length of list of abilities known for "Ability"
+        //checks if this character knows any abiliities and adds "Ability" if so
+        if(abilityList.Count > 0)
+        {
+            actionList.Add("Ability");
+        }
 
-        //check length of list of spells known for "Spell"
+        //checks if this character knows any spells and adds "Spell" if so
+        if(spellList.Count > 0)
+        {
+            actionList.Add("Spell");
+        }
 
         //"End" vs "Defend" ??
-
         actionList.Add("End");
-        actionList.Add("f2");
-        actionList.Add("f3");
 
         return actionList;
     }
@@ -376,7 +388,6 @@ public class PlayableChar : CombatChar
             yield return null;
 
             int lastSelected = selected;
-            //selected = (int)Input.GetAxisRaw("Horizontal");
 
             //changes which enemy is selected based on next and previous input
             if (Input.GetButtonDown("Next"))
@@ -416,8 +427,7 @@ public class PlayableChar : CombatChar
             if (Input.GetButtonDown("Submit")) { break; }
             //returns to the previous action menu
             if (Input.GetButtonDown("Cancel"))
-            {
-                selectingAttackTarget = false;
+            { 
                 Destroy(UICanvas);
                 ActionMenu();
                 yield break;
@@ -427,27 +437,37 @@ public class PlayableChar : CombatChar
         //removes UI as attack goes through
         Destroy(UICanvas);
 
+        //gets the enemy who's position matches the currently selected square
+        CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == targets[selected] select gameObject).ToList()[0].GetComponent<CombatChar>();
 
-        //This is where the actual attack will take place
-        Debug.Log("Yay! Attacking!");
+        //calculates damage to apply and calls TakeDamage()
+        int damage = strength /*+ weapon damage*/ - target.Defense;
+        target.BeginTakeDamage(damage);
+        while (target.TakingDamage) { yield return null; }
+        
 
 
         //allows TakeTurn to finish
         actionCompleted = true;
     }
 
-    //these are placeholder methods so that more than one button can be shown in the action menu for testing
-    //final action methods that require another menu should be coroutines
-    private IEnumerator f2()
+    //not yet implemented
+    private IEnumerator Ability()
     {
-        System.Random rng = new System.Random();
-        Debug.Log("f2" + rng.Next(0, 500));
         yield break;
     }
-    private IEnumerator f3()
+    private IEnumerator Spell()
     {
-        System.Random rng = new System.Random();
-        Debug.Log("f3" + rng.Next(0, 500));
         yield break;
     }
+
+    #region LevelUp Methods
+    /// <summary>
+    /// Levels up this character if it is an Agent
+    /// </summary>
+    private void AgentLevelUP()
+    {
+        Debug.Log("This works!");
+    }
+    #endregion
 }

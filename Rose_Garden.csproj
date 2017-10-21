@@ -13,13 +13,11 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile>
-    </CompilerResponseFile>
+    <CompilerResponseFile></CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows64:19</UnityBuildTarget>
     <UnityVersion>2017.1.1f1</UnityVersion>
-    <RootNamespace>
-    </RootNamespace>
+    <RootNamespace></RootNamespace>
     <LangVersion>4</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -81,12 +79,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\CombatChar.cs" />
-    <Compile Include="Assets\Scripts\Combat\SceneController.cs" />
     <Compile Include="Assets\Scripts\Combat\Enemy.cs" />
     <Compile Include="Assets\Scripts\Combat\GameController.cs" />
-    <Compile Include="Assets\Scripts\Combat\InitializerAndTurnTest.cs" />
     <Compile Include="Assets\Scripts\Combat\Node.cs" />
     <Compile Include="Assets\Scripts\Combat\PlayableChar.cs" />
+    <Compile Include="Assets\Scripts\Combat\SceneController.cs" />
+    <Compile Include="Assets\Scripts\Combat\TestScene\InitializerAndTurnTest.cs" />
     <Compile Include="Assets\Scripts\Combat\TurnHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

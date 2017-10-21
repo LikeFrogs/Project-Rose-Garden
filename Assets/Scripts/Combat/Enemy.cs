@@ -5,13 +5,23 @@ using UnityEngine;
 public class Enemy : CombatChar
 {
     // Use this for initialization
-    protected override void Awake ()
+    protected void Awake ()
     {
-        //default testing values
+        //inherited control variables
+        finishedTurn = false;
+        //ID???
+
+        //inherited stats
         health = 10;
         maxHealth = 10;
         speed = 0;
         maxSpeed = 0;
+        strength = 10;
+        dexterity = 10;
+        intelligence = 10;
+        defense = 5;
+        resistance = 5;
+        
 	}
 	
 	// Update is called once per frame

@@ -45,6 +45,12 @@ public class InitializerAndTurnTest : SceneController
                 //waits until the character's turn ends to pregress to the next object in the list
                 while (!charList[i].FinishedTurn) { yield return null; }
 
+                yield return null;
+
+                for (int j = 0; j < charList.Count; j++)
+                {
+                    if(charList[j] == null){ charList.RemoveAt(j); }
+                }
                 //checks for death, objective completion, special events, etc. here
                 //if combat ends here modify i and objectiveComplete
             }
