@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
 
+using UnityEngine.SceneManagement;
+
 enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
 
 public class PlayableChar : CombatChar
@@ -28,16 +30,8 @@ public class PlayableChar : CombatChar
     //all ints are default testing values for the moment
     protected void Awake ()
     {
-        //inherited stats
-        health = 10;
-        maxHealth = 10;
-        speed = 6;
-        maxSpeed = 6;
-        strength = 10;
-        dexterity = 10;
-        intelligence = 10;
-        defense = 5;
-        resistance = 5;
+        DontDestroyOnLoad(transform);
+
         //inherited control variable
         finishedTurn = false;
         //ID???
@@ -54,6 +48,35 @@ public class PlayableChar : CombatChar
         abilityList = new List<string>();
         spellList = new List<string>();
 	}
+
+    public void Init(int maxHealth, int maxSpeed, int strength, int dexterity, int intelligence, int defense, int resistance)
+    {
+        this.health = maxHealth;
+        this.maxHealth = maxHealth;
+
+        this.speed = maxSpeed;
+        this.maxSpeed = maxSpeed;
+
+        this.strength = strength;
+
+        this.dexterity = dexterity;
+
+        this.intelligence = intelligence;
+
+        this.defense = defense;
+
+        this.resistance = resistance;
+
+        //stats.Add(maxHealth);
+        //stats.Add(maxSpeed);
+        //stats.Add(strength);
+        //stats.Add(dexterity);
+        //stats.Add(intelligence);
+        //stats.Add(defense);
+        //stats.Add(resistance);
+
+        //return stats;
+    }
 	
 	// Update is called once per frame
 	void Update ()
@@ -153,28 +176,63 @@ public class PlayableChar : CombatChar
         //put this check anywhere it would be possible for the character to take damage
 
         #region movement calculations
+        //moveRange must be recalculated on every turn
+        moveRange.Clear();
         //holds the movement range visual which is created as squares are added to moveRange
-        List<GameObject> moveRangeIndicators = new List<GameObject>();
+        Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        //holds all possible targetable locations for this turn
+        List<Vector3> attackRangeIndicatorLocations = new List<Vector3>();
+
+        int attackRange = 5;
+
         //this for loop runs the inner functions on every square that would be within a character's unimpeded movement range
-        //the calculations in the middle determine if the square can actually be reached and if so adds it to moveRange
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
         {
             for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
             {
-                Vector3 test = new Vector3(x, y);
-                if (test == transform.position)
+                //determines if the square can actually be reached and if so adds it to moveRange
+                Vector3 testMov = new Vector3(x, y);
+                if (testMov == transform.position)
                 {
-                    moveRange.Add(test);
-                    moveRangeIndicators.Add(GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, test, Quaternion.identity));
+                    moveRange.Add(testMov);
+                    moveRangeIndicators.Add(testMov, GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, testMov, Quaternion.identity));
                 }
-                else if (Node.CheckSquare(transform.position, test, speed))
+                else if (Node.CheckSquare(transform.position, testMov, speed))
                 {
-                    moveRange.Add(test);
+                    moveRange.Add(testMov);
                     //instantiate a movement range visual square with position test here
-                    moveRangeIndicators.Add(GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, test, Quaternion.identity));
+                    moveRangeIndicators.Add(testMov, GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, testMov, Quaternion.identity));
+                }
+
+                //for every reachable square the entire attack range is checked for line of sight
+                if (moveRangeIndicators.ContainsKey(testMov))
+                {
+                    for (int i = x - attackRange; i <= x + attackRange; i++)
+                    {
+                        for (int j = y - (attackRange - System.Math.Abs(x - i)); System.Math.Abs(x - i) + System.Math.Abs(y - j) <= attackRange; j++)
+                        {
+                            Vector3 testAtk = new Vector3(i, j);
+
+                            //if the target square can be seen from (x, y) it is added to attackRangeIndicatorLocations
+                            if (!Physics2D.Linecast(testMov, testAtk))
+                            {
+                                attackRangeIndicatorLocations.Add(testAtk);
+                            }
+                        }
+                    }
                 }
             }
         }
+        //attack range indicators are only spawned where the player can't move to so that they don't conflict with the move range indicators
+        List<GameObject> attackRangeIndicators = new List<GameObject>();
+        foreach(Vector3 location in attackRangeIndicatorLocations)
+        {
+            if (!moveRangeIndicators.ContainsKey(location))
+            {
+                attackRangeIndicators.Add(GameObject.Instantiate<GameObject>(GameController.AttackSquarePrefab, location, Quaternion.identity));
+            }
+        }
+
         //turns on player movement
         movePhase = true;
         #endregion
@@ -187,16 +245,24 @@ public class PlayableChar : CombatChar
         while (!actionCompleted){ yield return null; }
 
         #region end of turn variable resetting
-        //moveRange must be recalculated on every turn
-        moveRange.Clear();
         //destroy any UI this turn created
         GameObject.Destroy(UICanvas);
         UICanvas = null;
+
         //removes the movement range visual
-        foreach (GameObject moveRangeIndicator in moveRangeIndicators)
+        foreach(KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
         {
-            GameObject.Destroy(moveRangeIndicator);
+            GameObject.Destroy(moveRangeIndicator.Value);
         }
+        //removes the attack range visual
+        foreach(GameObject attackRangeIndicator in attackRangeIndicators)
+        {
+            GameObject.Destroy(attackRangeIndicator);
+        }
+        moveRangeIndicators.Clear();
+        attackRangeIndicatorLocations.Clear();
+        attackRangeIndicators.Clear();
+
         //reset all variables for next turn
         movePhase = false;
         isMoving = false;

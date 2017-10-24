@@ -14,6 +14,7 @@ public class GameController : MonoBehaviour
     [SerializeField] GameObject button;
     [SerializeField] GameObject selectionSquare;
     [SerializeField] GameObject selectedSquare;
+    [SerializeField] GameObject attackSquare;
 
     //static version of prefabs to be set in Awake()
     private static GameObject moveRangeSprite;
@@ -21,6 +22,7 @@ public class GameController : MonoBehaviour
     private static GameObject canvasPrefab;
     private static GameObject selectionPrefab;
     private static GameObject selectedPrefab;
+    private static GameObject attackPrefab;
 
     //static prefab properties to be accessed by other classes
     /// <summary>
@@ -58,22 +60,29 @@ public class GameController : MonoBehaviour
     {
         get { return selectedPrefab; }
     }
+    /// <summary>
+    /// Gets the visual for displaying attack range
+    /// </summary>
+    public static GameObject AttackSquarePrefab
+    {
+        get { return attackPrefab; }
+    }
     #endregion
 
     #region Instance data
     //tells this when to give control to the SceneController
     private bool sceneLoaded;
     //holds the playable party members between scenes
-    private List<GameObject> party;
+    private List<PlayableChar> party;
     //holds the next unused ID for character ID tagging for targets
-    private static uint nextID;
+    private static int nextID;
     #endregion
 
     #region Properties
     /// <summary>
     /// holds the next unused ID for character ID tagging for targets
     /// </summary>
-    public static uint NextID
+    public static int NextID
     {
         get { return nextID; }
         set
@@ -83,6 +92,11 @@ public class GameController : MonoBehaviour
                 nextID = value;
             }
         }
+    }
+
+    public List<PlayableChar> Party
+    {
+        get { return party; }
     }
     #endregion
 
@@ -100,16 +114,19 @@ public class GameController : MonoBehaviour
         canvasPrefab = canvas;
         selectionPrefab = selectionSquare;
         selectedPrefab = selectedSquare;
+        attackPrefab = attackSquare;
 
         //begin play before any new scenes have been loaded
         sceneLoaded = false;
 
         //this is where character creation and such should be done
-        party = new List<GameObject>();
+        party = new List<PlayableChar>();
 
-        party.Add(bluePlayer);
-        party.Add(redPlayer);
+        party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
+        party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
+        party[0].GetComponent<PlayableChar>().Init(30, 4, 15, 15, 15, 15, 2);
+        party[1].GetComponent<PlayableChar>().Init(30, 7, 15, 15, 15, 15, 2);
 
         SceneManager.LoadScene("TestScene");
     }
@@ -122,6 +139,7 @@ public class GameController : MonoBehaviour
         {
             sceneLoaded = false;
             SceneController manager = GameObject.FindWithTag("SceneManager").GetComponent<SceneController>();
+            //manager.AddToCharList(party);
             manager.BeginPlay(party);
         }
 	}

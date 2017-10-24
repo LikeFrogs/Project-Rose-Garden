@@ -8,21 +8,23 @@ public class InitializerAndTurnTest : SceneController
     /// <summary>
     /// Runs the combat for this scene
     /// </summary>
-    /// <param name="party">The playable party</param>
-    protected override IEnumerator PlayScene(List<GameObject> party)
+    protected override IEnumerator PlayScene(List<PlayableChar> party)
     {
-        //start of a list that will be built up to have all turn taking characters in scene
+        //it would probably be a good idea to use LINQ statements here rather than a ton of foreach loops
         List<CombatChar> charList = new List<CombatChar>();
 
+        //GameController gameController = Camera.main.GetComponent<GameController>();
 
-        //it would probably be a good idea to use LINQ statements here rather than a ton of foreach loops
-        
-
-        //repurpose this once we do player controlled combat set-up
-        foreach(GameObject member in party)
+        foreach(PlayableChar character in party)
         {
-            charList.Add(Instantiate(member).GetComponent<PlayableChar>());
+            charList.Add(character);
         }
+
+        charList[0].transform.position = new Vector3(2, 2);
+        charList[1].transform.position = new Vector3(0, 0);
+
+        //doing this would essentially remove the player from the scene -- useful for non combat scenes
+        //charList[0].gameObject.SetActive(false);
 
         //adds enemies to charList
         charList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<CombatChar>()).ToList());
@@ -32,6 +34,14 @@ public class InitializerAndTurnTest : SceneController
 
 
         //set up party starting positions here
+
+
+
+        for(int i = 0; i < charList.Count; i++)
+        {
+            charList[i].gameObject.SetActive(true);
+        }
+
 
 
         //runs combat until the combat's objective is completed
