@@ -7,28 +7,152 @@ using System.Linq;
 
 using UnityEngine.SceneManagement;
 
-enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
+public enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
 
 public class PlayableChar : CombatChar
 {
-    #region Fields
-    //character stats
+    #region Stats fields and properties
+    private int health;
+    private int maxHealth;
+    private int speed;
+    private int maxSpeed;
+    private int strength;
+    private int dexterity;
+    private int intelligence;
+    private int defense;
+    private int resistance;
+    private int attackRange;
+
     private PlayerClass playerClass;
     private List<string> abilityList;
     private List<string> spellList;
 
-    //control variables
+    /// <summary>
+    /// Gets character's current health
+    /// </summary>
+    public override int Health
+    {
+        get { return health; }
+    }
+    /// <summary>
+    /// Gets character's maximum health
+    /// </summary>
+    public override int MaxHealth
+    {
+        get { return maxHealth; }
+    }
+    /// <summary>
+    /// Gets character's movement speed
+    /// </summary>
+    public override int Speed
+    {
+        get { return speed; }
+    }
+    /// <summary>
+    /// Gets character's max speed
+    /// </summary>
+    public override int MaxSpeed
+    {
+        get { return maxSpeed; }
+    }
+    /// <summary>
+    /// Gets character's strength. Used for physical damage
+    /// </summary>
+    public override int Strength
+    {
+        get { return strength; }
+    }
+    /// <summary>
+    /// Gets character's dexterity. Used for speed and initiative
+    /// </summary>
+    public override int Dexterity
+    {
+        get { return dexterity; }
+    }
+    /// <summary>
+    /// Gets character's intelligence. Used for magic damage
+    /// </summary>
+    public override int Intelligence
+    {
+        get { return intelligence; }
+    }
+    /// <summary>
+    /// Gets character's defense. Used to defend against physical attacks
+    /// </summary>
+    public override int Defense
+    {
+        get { return defense; }
+    }
+    /// <summary>
+    /// Gets character's resistance. Used to defend against magical attacks
+    /// </summary>
+    public override int Resistance
+    {
+        get { return resistance; }
+    }
+    /// <summary>
+    /// Gets character's attack range
+    /// </summary>
+    public override int AttackRange
+    {
+        get { return attackRange; }
+    }
+
+    /// <summary>
+    /// Gets character's class
+    /// </summary>
+    public PlayerClass Class
+    {
+        get { return playerClass; }
+    }
+    /// <summary>
+    /// Gets character's abilities
+    /// </summary>
+    public List<string> AbilityList
+    {
+        get { return abilityList; }
+    }
+    /// <summary>
+    /// Gets character's spells
+    /// </summary>
+    public List<string> SpellList
+    {
+        get { return spellList; }
+    }
+    #endregion
+
+    #region Fields and properties for game flow
+    private bool finishedTurn;
+    private bool takingDamage;
+
     private bool movePhase;
     private bool isMoving;
     private List<Vector3> moveRange;
     private bool actionCompleted;
     private GameObject UICanvas;
     private bool waitingForAction;
+
+    /// <summary>
+    /// This bool will be set to true at the end of a character's turn.
+    /// This will be used to tell the turn handler to move on to the next turn.
+    /// </summary>
+    public override bool FinishedTurn
+    {
+        get { return finishedTurn; }
+    }
+    /// <summary>
+    /// Gets true when taking damage and false otherwise
+    /// </summary>
+    public override bool TakingDamage
+    {
+        get { return takingDamage; }
+    }
     #endregion
-    
+
+
     // Use this for initialization
     //all ints are default testing values for the moment
-    protected void Awake ()
+    protected void Awake()
     {
         DontDestroyOnLoad(transform);
 
@@ -47,9 +171,12 @@ public class PlayableChar : CombatChar
         playerClass = PlayerClass.Agent;
         abilityList = new List<string>();
         spellList = new List<string>();
-	}
+    }
 
-    public void Init(int maxHealth, int maxSpeed, int strength, int dexterity, int intelligence, int defense, int resistance)
+    /// <summary>
+    /// Sets up the stats of this character. Should only be called at character creation.
+    /// </summary>
+    public void Init(int maxHealth, int maxSpeed, int strength, int dexterity, int intelligence, int defense, int resistance, int attackRange)
     {
         this.health = maxHealth;
         this.maxHealth = maxHealth;
@@ -67,19 +194,11 @@ public class PlayableChar : CombatChar
 
         this.resistance = resistance;
 
-        //stats.Add(maxHealth);
-        //stats.Add(maxSpeed);
-        //stats.Add(strength);
-        //stats.Add(dexterity);
-        //stats.Add(intelligence);
-        //stats.Add(defense);
-        //stats.Add(resistance);
-
-        //return stats;
+        this.attackRange = attackRange;
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    // Update is called once per frame
+    void Update()
     {
         //looks for input to bring up the action menu
         if (movePhase)
@@ -94,9 +213,9 @@ public class PlayableChar : CombatChar
                     playerList.Add(playerObjects[i].transform.position);
                 }
                 playerList.Remove(transform.position); //the character's own square should not be restricted
-                
+
                 //input for action menu
-                if(Input.GetButtonDown("Submit") && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
+                if (Input.GetButtonDown("Submit") && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
                 {
                     //character can't move while the menu is up
                     movePhase = false;
@@ -109,7 +228,7 @@ public class PlayableChar : CombatChar
         if (waitingForAction)
         {
             //if (Input.GetKeyDown(KeyCode.Escape))
-            if(Input.GetButtonDown("Cancel"))
+            if (Input.GetButtonDown("Cancel"))
             {
                 GameObject.Destroy(UICanvas);
                 UICanvas = null;
@@ -150,21 +269,17 @@ public class PlayableChar : CombatChar
     }
 
     /// <summary>
-    /// Calculates the initiative of the character
+    /// Starts the coroutine that handles a character's turn
     /// </summary>
-    /// <returns>The calculated initiative value</returns>
-    public override int GetInitiative()
+    public override void BeginTurn()
     {
-        //do some stuff to get an initiative value
-
-        //testing value
-        return 1;
+        StartCoroutine("TakeTurn");
     }
 
     /// <summary>
     /// Handles the entire turn for playable characters
     /// </summary>
-    protected override IEnumerator TakeTurn()
+    private IEnumerator TakeTurn()
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
@@ -182,8 +297,6 @@ public class PlayableChar : CombatChar
         Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
         //holds all possible targetable locations for this turn
         List<Vector3> attackRangeIndicatorLocations = new List<Vector3>();
-
-        int attackRange = 5;
 
         //this for loop runs the inner functions on every square that would be within a character's unimpeded movement range
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
@@ -225,7 +338,7 @@ public class PlayableChar : CombatChar
         }
         //attack range indicators are only spawned where the player can't move to so that they don't conflict with the move range indicators
         List<GameObject> attackRangeIndicators = new List<GameObject>();
-        foreach(Vector3 location in attackRangeIndicatorLocations)
+        foreach (Vector3 location in attackRangeIndicatorLocations)
         {
             if (!moveRangeIndicators.ContainsKey(location))
             {
@@ -242,7 +355,7 @@ public class PlayableChar : CombatChar
         //the specific actions to be performed are each their own functions
         //or coroutines depending on the complexity
         actionCompleted = false;
-        while (!actionCompleted){ yield return null; }
+        while (!actionCompleted) { yield return null; }
 
         #region end of turn variable resetting
         //destroy any UI this turn created
@@ -250,12 +363,12 @@ public class PlayableChar : CombatChar
         UICanvas = null;
 
         //removes the movement range visual
-        foreach(KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
+        foreach (KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
         {
             GameObject.Destroy(moveRangeIndicator.Value);
         }
         //removes the attack range visual
-        foreach(GameObject attackRangeIndicator in attackRangeIndicators)
+        foreach (GameObject attackRangeIndicator in attackRangeIndicators)
         {
             GameObject.Destroy(attackRangeIndicator);
         }
@@ -269,9 +382,59 @@ public class PlayableChar : CombatChar
         waitingForAction = false;
         actionCompleted = false;
         #endregion
-        
+
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
+    }
+
+    /// <summary>
+    /// Calculates the initiative of the character
+    /// </summary>
+    /// <returns>The calculated initiative value</returns>
+    public override int GetInitiative()
+    {
+        //do some stuff to get an initiative value
+
+        //testing value
+        return 1;
+    }
+
+    /// <summary>
+    /// Starts the coroutine to deal damage to a character
+    /// </summary>
+    /// <param name="damage">The amount of damage to deal</param>
+    public override void BeginTakeDamage(int damage)
+    {
+        StartCoroutine(TakeDamage(damage));
+    }
+
+    /// <summary>
+    /// Runs when a character takes damage
+    /// </summary>
+    /// <param name="damage">The amount of damage to take</param>
+    private IEnumerator TakeDamage(int damage)
+    {
+        //this tells the attacking character to pause while this method happens
+        takingDamage = true;
+
+        //takes the damage
+        health -= damage;
+        if (health < 0) { health = 0; }
+
+        //play the taking damage animation here and make sure it takes the correct amount of time
+        //yield return null;
+
+        if (health == 0)
+        {
+            //run the death animation here
+
+            Destroy(gameObject);
+        }
+
+        //resume the attacking object's turn
+        takingDamage = false;
+
+        yield break;
     }
 
     /// <summary>
@@ -322,7 +485,7 @@ public class PlayableChar : CombatChar
         //create buttons based on possible actions
         List<string> menuList = GetActions();
         List<GameObject> buttonList = new List<GameObject>();
-        for(int i = 0; i< menuList.Count; i++)
+        for (int i = 0; i < menuList.Count; i++)
         {
             //instantiate button, change text to correct menu option and connect button to method of the same name
             GameObject button = Instantiate(GameController.ButtonPrefab);
@@ -368,7 +531,7 @@ public class PlayableChar : CombatChar
             new Vector3(transform.position.x, transform.position.y - 1)
         };
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach(GameObject enemy in enemies)
+        foreach (GameObject enemy in enemies)
         {
             if (adjacentSquares.Contains(enemy.transform.position))
             {
@@ -378,13 +541,13 @@ public class PlayableChar : CombatChar
         }
 
         //checks if this character knows any abiliities and adds "Ability" if so
-        if(abilityList.Count > 0)
+        if (abilityList.Count > 0)
         {
             actionList.Add("Ability");
         }
 
         //checks if this character knows any spells and adds "Spell" if so
-        if(spellList.Count > 0)
+        if (spellList.Count > 0)
         {
             actionList.Add("Spell");
         }
@@ -447,7 +610,7 @@ public class PlayableChar : CombatChar
         canvas.planeDistance = 1;
         UICanvas = canvasObject;
         #endregion
-        
+
         //waits while the user is selecting a target
         while (true)
         {
@@ -493,7 +656,7 @@ public class PlayableChar : CombatChar
             if (Input.GetButtonDown("Submit")) { break; }
             //returns to the previous action menu
             if (Input.GetButtonDown("Cancel"))
-            { 
+            {
                 Destroy(UICanvas);
                 ActionMenu();
                 yield break;
@@ -510,7 +673,7 @@ public class PlayableChar : CombatChar
         int damage = strength /*+ weapon damage*/ - target.Defense;
         target.BeginTakeDamage(damage);
         while (target.TakingDamage) { yield return null; }
-        
+
 
 
         //allows TakeTurn to finish
@@ -527,7 +690,7 @@ public class PlayableChar : CombatChar
         yield break;
     }
 
-    #region LevelUp Methods
+    #region Level up mnthods
     /// <summary>
     /// Levels up this character if it is an Agent
     /// </summary>

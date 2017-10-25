@@ -125,8 +125,8 @@ public class GameController : MonoBehaviour
         party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
         party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 4, 15, 15, 15, 15, 2);
-        party[1].GetComponent<PlayableChar>().Init(30, 7, 15, 15, 15, 15, 2);
+        party[0].GetComponent<PlayableChar>().Init(30, 3, 15, 15, 15, 15, 2, 5);
+        party[1].GetComponent<PlayableChar>().Init(30, 7, 15, 15, 15, 15, 2, 1);
 
         SceneManager.LoadScene("TestScene");
     }
