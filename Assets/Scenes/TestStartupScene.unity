@@ -211,7 +211,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bluePlayer: {fileID: 1048348256955216, guid: eb8cf85807295794e9a79a754c4ee663, type: 2}
   redPlayer: {fileID: 1188525987883878, guid: 5c8e9f427d8b359458f506353cef4a59, type: 2}
-  purpleSquare: {fileID: 1724847115439378, guid: 932dae52352ffc34cb37dd27f47e0b07,
+  purpleSquare: {fileID: 1071028356007080, guid: 0c07604f92e7ad54e90b3ee6567a5d68,
     type: 2}
   canvas: {fileID: 1651236630348286, guid: b9eab21c024892e42af7c7486a8c8167, type: 2}
   button: {fileID: 1663067073114468, guid: bed6ede8090a45e458617facf07916b4, type: 2}
@@ -219,5 +219,5 @@ MonoBehaviour:
     type: 2}
   selectedSquare: {fileID: 1173001239561544, guid: 4477b31e93f490c49961e4eccc20bf77,
     type: 2}
-  attackSquare: {fileID: 1347753161358098, guid: fec76afa85eaa4144961a1df42d86cb8,
+  attackSquare: {fileID: 1618723863189448, guid: 77d345428f98ce346b6ebea19e556c89,
     type: 2}

@@ -135,8 +135,7 @@ public class PlayableChar : CombatChar
     private GameObject UICanvas;
     private bool waitingForAction;
     Dictionary<Vector3, GameObject> moveRangeIndicators;
-    List<Vector3> attackRangeIndicatorLocations;
-    List<GameObject> attackRangeIndicators;
+    Dictionary<Vector3, GameObject> attackRangeIndicators;
 
 
     /// <summary>
@@ -188,8 +187,7 @@ public class PlayableChar : CombatChar
         UICanvas = null;
         waitingForAction = false;
         moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        attackRangeIndicatorLocations = new List<Vector3>();
-        attackRangeIndicators = new List<GameObject>();
+        attackRangeIndicators = new Dictionary<Vector3, GameObject>();
     }
 
     /// <summary>
@@ -246,8 +244,7 @@ public class PlayableChar : CombatChar
             //if (Input.GetKeyDown(KeyCode.Escape))
             if (Input.GetButtonDown("Cancel"))
             {
-                GameObject.Destroy(UICanvas);
-                UICanvas = null;
+                Destroy(UICanvas);
 
                 movePhase = true;
                 waitingForAction = false;
@@ -308,6 +305,12 @@ public class PlayableChar : CombatChar
         //put this check anywhere it would be possible for the character to take damage
 
         #region movement calculations
+        UICanvas = Instantiate(GameController.CanvasPrefab);
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, - .5f));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
+
+
         //moveRange must be recalculated on every turn
         moveRange.Clear();
 
@@ -321,42 +324,44 @@ public class PlayableChar : CombatChar
                 if (testMov == transform.position)
                 {
                     moveRange.Add(testMov);
-                    moveRangeIndicators.Add(testMov, GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, testMov, Quaternion.identity));
+                    moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    moveRangeIndicators[testMov].transform.SetParent(UICanvas.transform);
+                    moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
+                    moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
                 else if (Node.CheckSquare(transform.position, testMov, speed))
                 {
                     moveRange.Add(testMov);
-                    //instantiate a movement range visual square with position testMov here
-                    moveRangeIndicators.Add(testMov, GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, testMov, Quaternion.identity));
-                }
-
-                //for every reachable square the entire attack range is checked for line of sight
-                //this is necessary due to the possiblity that certain squares are only visible from certain positions
-                if (moveRangeIndicators.ContainsKey(testMov))
-                {
-                    for (int i = x - attackRange; i <= x + attackRange; i++)
-                    {
-                        for (int j = y - (attackRange - System.Math.Abs(x - i)); System.Math.Abs(x - i) + System.Math.Abs(y - j) <= attackRange; j++)
-                        {
-                            Vector3 testAtk = new Vector3(i, j);
-
-                            //if the target square can be seen from (x, y) it is added to attackRangeIndicatorLocations
-                            if (!Physics2D.Linecast(testMov, testAtk))
-                            {
-                                attackRangeIndicatorLocations.Add(testAtk);
-                            }
-                        }
-                    }
+                    moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    moveRangeIndicators[testMov].transform.SetParent(UICanvas.transform);
+                    moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
+                    moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
             }
         }
 
-        //only instantiate visuals for attack range if there is not already a visual there
-        foreach (Vector3 location in attackRangeIndicatorLocations)
+        //for every reachable square the entire attack range is checked for line of sight
+        //this is necessary due to the possiblity that certain squares are only visible from certain positions
+        foreach (KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
         {
-            if (!moveRangeIndicators.ContainsKey(location))
+            int x = (int)moveRangeIndicator.Key.x;
+            int y = (int)moveRangeIndicator.Key.y;
+            for (int i = x - attackRange; i <= x + attackRange; i++)
             {
-                attackRangeIndicators.Add(GameObject.Instantiate<GameObject>(GameController.AttackSquarePrefab, location, Quaternion.identity));
+                for (int j = y - (attackRange - System.Math.Abs(x - i)); System.Math.Abs(x - i) + System.Math.Abs(y - j) <= attackRange; j++)
+                {
+                    Vector3 testAtk = new Vector3(i, j);
+
+                    //if the target square can be seen from (x, y) and does not already have an indicator it is added to attackRangeIndicatorLocations
+                    if (!Physics2D.Linecast(moveRangeIndicator.Key, testAtk) && !moveRangeIndicators.ContainsKey(testAtk) && !attackRangeIndicators.ContainsKey(testAtk))
+                    {
+                        attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
+                        attackRangeIndicators[testAtk].transform.SetParent(UICanvas.transform);
+                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
+                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
+
+                    }
+                }
             }
         }
 
@@ -382,21 +387,19 @@ public class PlayableChar : CombatChar
     private void ResetTurnVariables()
     {
         //destroy any UI this turn created
-        GameObject.Destroy(UICanvas);
-        UICanvas = null;
+        Destroy(UICanvas);
 
         //removes the movement range visual
         foreach (KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
         {
-            GameObject.Destroy(moveRangeIndicator.Value);
+            Destroy(moveRangeIndicator.Value);
         }
         moveRangeIndicators.Clear();
         //removes the attack range visual
-        foreach (GameObject attackRangeIndicator in attackRangeIndicators)
+        foreach (KeyValuePair<Vector3, GameObject> attackRangeIndicator in attackRangeIndicators)
         {
-            GameObject.Destroy(attackRangeIndicator);
+            Destroy(attackRangeIndicator.Value);
         }
-        attackRangeIndicatorLocations.Clear();
         attackRangeIndicators.Clear();
 
         //reset all variables for next turn
@@ -498,8 +501,8 @@ public class PlayableChar : CombatChar
     private void ActionMenu()
     {
         //instantiates a canvas to display the action menu on
-        GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
-        Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
+        UICanvas = Instantiate(GameController.CanvasPrefab);
+        //Canvas canvas = (Canvas)UICanvas.GetComponent("Canvas");
 
         //create buttons based on possible actions
         List<string> menuList = GetActions();
@@ -508,26 +511,21 @@ public class PlayableChar : CombatChar
         {
             //instantiate button, change text to correct menu option and connect button to method of the same name
             GameObject button = Instantiate(GameController.ButtonPrefab);
-            button.transform.SetParent(canvasObject.transform);
+            button.transform.SetParent(UICanvas.transform);
             button.GetComponentInChildren<Text>().text = menuList[i];
             string word = menuList[i];
             button.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(word));
             //position the button next to this character
-            Vector3 buttonPosition = Camera.main.WorldToScreenPoint(new Vector3(transform.position.x + .5f, transform.position.y));
+            Vector2 buttonPosition = Camera.main.WorldToScreenPoint(new Vector3(transform.position.x + .5f, transform.position.y));
             button.GetComponent<RectTransform>().anchoredPosition = new Vector2(buttonPosition.x, buttonPosition.y - (30 * i));
+
 
             buttonList.Add(button);
         }
-        //set the canvas camera
-        canvas.worldCamera = Camera.main;
-        canvas.planeDistance = 1;
 
         //select the first button to enable keyboard/gamepad control
-        GameObject eventSystem = GameObject.Find("EventSystem");
+        GameObject eventSystem = GameObject.FindGameObjectWithTag("EventSystem");
         eventSystem.GetComponent<EventSystem>().SetSelectedGameObject(buttonList[0]);
-
-        //now the UI is accessable by all methods and can be destroyed when no longer needed
-        UICanvas = canvasObject;
 
         //turns on the ability to back out of the action menu
         waitingForAction = true;
@@ -595,8 +593,7 @@ public class PlayableChar : CombatChar
 
         #region UI set-up
         //removes the action menu before bringing up the next one
-        GameObject.Destroy(UICanvas);
-        UICanvas = null;
+        Destroy(UICanvas);
         //creates a list of Vector3's with attackable targets
         List<Vector3> adjacentSquares = new List<Vector3>
         {
@@ -613,29 +610,21 @@ public class PlayableChar : CombatChar
             targetIcons.Add(targetPos, null);
         }
         //instantiates a canvas to display the action menu on
-        GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
-        Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
-        //List<GameObject> selectionIcons = new List<GameObject>();
+        UICanvas = Instantiate(GameController.CanvasPrefab);
         //creates UI for targetting
-        //after this targets[x] will always correspond to selectionIcons[x]
         for (int i = 0; i < targets.Count; i++)
         {
             targetIcons[targets[i]] = Instantiate(GameController.SelectionPrefab);
-            targetIcons[targets[i]].transform.SetParent(canvasObject.transform);
-            Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
-            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
+            targetIcons[targets[i]].transform.SetParent(UICanvas.transform);
+            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(targets[i]);
         }
         //changes the icon on the first target "selection icon" to a "selected icon"
         int targetIndex = 0;
         Vector3 selectedPosition = targets[targetIndex];
         Destroy(targetIcons[selectedPosition]);
         targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-        targetIcons[selectedPosition].transform.SetParent(canvasObject.transform);
-        Vector3 selectedScreenPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
-        canvas.worldCamera = Camera.main;
-        canvas.planeDistance = 1;
-        UICanvas = canvasObject;
+        targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
+        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
         #endregion
 
         //waits while the user is selecting a target
@@ -660,23 +649,17 @@ public class PlayableChar : CombatChar
             //redraws the UI if the selected enemy changes
             if (lastSelectedPosition != selectedPosition)
             {
-                canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
+                //canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
                 //sets the previously selected square to have selection UI
                 Destroy(targetIcons[lastSelectedPosition]);
                 targetIcons[lastSelectedPosition] = Instantiate(GameController.SelectionPrefab);
-                targetIcons[lastSelectedPosition].transform.SetParent(canvasObject.transform);
-                selectedScreenPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
-                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
+                targetIcons[lastSelectedPosition].transform.SetParent(UICanvas.transform);
+                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
                 //sets the newly selected square to have selected UI
                 Destroy(targetIcons[selectedPosition]);
                 targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-                targetIcons[selectedPosition].transform.SetParent(canvasObject.transform);
-                selectedScreenPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
-                //resets the camera
-                canvas.worldCamera = Camera.main;
-                canvas.planeDistance = 1;
-                UICanvas = canvasObject;
+                targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
+                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
             }
 
             //confirms attack target

@@ -8,6 +8,8 @@ TagManager:
   - Enemy
   - Interactable
   - SceneController
+  - Canvas
+  - EventSystem
   layers:
   - Default
   - TransparentFX
