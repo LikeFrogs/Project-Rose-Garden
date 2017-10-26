@@ -23,7 +23,7 @@ GameObject:
   - component: {fileID: 114727372157047178}
   m_Layer: 5
   m_Name: Image
-  m_TagString: Untagged
+  m_TagString: SelectionIcon
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

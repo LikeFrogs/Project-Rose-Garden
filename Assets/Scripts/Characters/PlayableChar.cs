@@ -133,9 +133,8 @@ public class PlayableChar : CombatChar
     private List<Vector3> moveRange;
     private bool actionCompleted;
     private GameObject UICanvas;
+    private GameObject MovementCanvas;
     private bool waitingForAction;
-    Dictionary<Vector3, GameObject> moveRangeIndicators;
-    Dictionary<Vector3, GameObject> attackRangeIndicators;
 
 
     /// <summary>
@@ -186,8 +185,6 @@ public class PlayableChar : CombatChar
         actionCompleted = false;
         UICanvas = null;
         waitingForAction = false;
-        moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        attackRangeIndicators = new Dictionary<Vector3, GameObject>();
     }
 
     /// <summary>
@@ -305,10 +302,13 @@ public class PlayableChar : CombatChar
         //put this check anywhere it would be possible for the character to take damage
 
         #region movement calculations
-        UICanvas = Instantiate(GameController.CanvasPrefab);
+        //UI object set up
+        MovementCanvas = Instantiate(GameController.CanvasPrefab);
         Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, - .5f));
         Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
         Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
+        Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        Dictionary<Vector3, GameObject> attackRangeIndicators = new Dictionary<Vector3, GameObject>();
 
 
         //moveRange must be recalculated on every turn
@@ -324,16 +324,19 @@ public class PlayableChar : CombatChar
                 if (testMov == transform.position)
                 {
                     moveRange.Add(testMov);
+                    //creates UI for this square
                     moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
-                    moveRangeIndicators[testMov].transform.SetParent(UICanvas.transform);
+                    moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
                 else if (Node.CheckSquare(transform.position, testMov, speed))
                 {
                     moveRange.Add(testMov);
+                    //creates UI for this square
+
                     moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
-                    moveRangeIndicators[testMov].transform.SetParent(UICanvas.transform);
+                    moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
@@ -355,8 +358,9 @@ public class PlayableChar : CombatChar
                     //if the target square can be seen from (x, y) and does not already have an indicator it is added to attackRangeIndicatorLocations
                     if (!Physics2D.Linecast(moveRangeIndicator.Key, testAtk) && !moveRangeIndicators.ContainsKey(testAtk) && !attackRangeIndicators.ContainsKey(testAtk))
                     {
+                        //creates UI for this square
                         attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
-                        attackRangeIndicators[testAtk].transform.SetParent(UICanvas.transform);
+                        attackRangeIndicators[testAtk].transform.SetParent(MovementCanvas.transform);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
 
@@ -364,6 +368,18 @@ public class PlayableChar : CombatChar
                 }
             }
         }
+
+        List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= attackRange select enemy).ToList();
+        foreach (GameObject enemy in enemyList)
+        {
+            if (!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
+            {
+                GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
+                newIndicator.transform.SetParent(MovementCanvas.transform);
+                newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
+            }
+        }
+
 
         //turns on player movement
         movePhase = true;
@@ -388,19 +404,7 @@ public class PlayableChar : CombatChar
     {
         //destroy any UI this turn created
         Destroy(UICanvas);
-
-        //removes the movement range visual
-        foreach (KeyValuePair<Vector3, GameObject> moveRangeIndicator in moveRangeIndicators)
-        {
-            Destroy(moveRangeIndicator.Value);
-        }
-        moveRangeIndicators.Clear();
-        //removes the attack range visual
-        foreach (KeyValuePair<Vector3, GameObject> attackRangeIndicator in attackRangeIndicators)
-        {
-            Destroy(attackRangeIndicator.Value);
-        }
-        attackRangeIndicators.Clear();
+        Destroy(MovementCanvas);
 
         //reset all variables for next turn
         movePhase = false;
@@ -489,6 +493,21 @@ public class PlayableChar : CombatChar
             t += Time.deltaTime * moveSpeed;
             transform.position = Vector3.Lerp(startPos, endPos, t);
             yield return null;
+        }
+
+        foreach(GameObject oldIndicator in GameObject.FindGameObjectsWithTag("SelectionIcon"))
+        {
+            Destroy(oldIndicator);
+        }
+        List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= attackRange select enemy).ToList();
+        foreach(GameObject enemy in enemyList)
+        {
+            if(!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
+            {
+                GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
+                newIndicator.transform.SetParent(MovementCanvas.transform);
+                newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
+            }
         }
 
         //when done moving allow more input to be received
@@ -675,6 +694,7 @@ public class PlayableChar : CombatChar
 
         //removes UI as attack goes through
         Destroy(UICanvas);
+        Destroy(MovementCanvas);
 
         //gets the enemy whose position matches the currently selected square
         CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();

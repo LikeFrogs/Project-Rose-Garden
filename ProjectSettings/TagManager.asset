@@ -10,6 +10,7 @@ TagManager:
   - SceneController
   - Canvas
   - EventSystem
+  - SelectionIcon
   layers:
   - Default
   - TransparentFX
