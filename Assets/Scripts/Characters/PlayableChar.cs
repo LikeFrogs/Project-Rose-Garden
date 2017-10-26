@@ -5,10 +5,11 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
 
-using UnityEngine.SceneManagement;
-
 public enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
 
+/// <summary>
+/// A playable character
+/// </summary>
 public class PlayableChar : CombatChar
 {
     #region Stats fields and properties
@@ -125,12 +126,18 @@ public class PlayableChar : CombatChar
     private bool finishedTurn;
     private bool takingDamage;
 
+    //these all store either data that tells this class when to perform certain actions or objects that need to be accessed from more than one method
+    private Vector3 startingPosition;
     private bool movePhase;
     private bool isMoving;
     private List<Vector3> moveRange;
     private bool actionCompleted;
     private GameObject UICanvas;
     private bool waitingForAction;
+    Dictionary<Vector3, GameObject> moveRangeIndicators;
+    List<Vector3> attackRangeIndicatorLocations;
+    List<GameObject> attackRangeIndicators;
+
 
     /// <summary>
     /// This bool will be set to true at the end of a character's turn.
@@ -139,6 +146,17 @@ public class PlayableChar : CombatChar
     public override bool FinishedTurn
     {
         get { return finishedTurn; }
+        set
+        {
+            finishedTurn = value;
+            if (finishedTurn == true)
+            {
+                //StopAllCoroutines();
+                //this set is only called if a turn has been cancelled, thus the character needs to be returned to where it was when the turn started
+                transform.position = startingPosition;
+                ResetTurnVariables();
+            }
+        }
     }
     /// <summary>
     /// Gets true when taking damage and false otherwise
@@ -154,23 +172,24 @@ public class PlayableChar : CombatChar
     //all ints are default testing values for the moment
     protected void Awake()
     {
+        //the playable party will always transfer between scenes
         DontDestroyOnLoad(transform);
 
-        //inherited control variable
+        //control variables with properties
         finishedTurn = false;
-        //ID???
+        takingDamage = false;
 
-        //control variables
+        //local control variables
+        startingPosition = new Vector3();
         movePhase = false;
         isMoving = false;
         moveRange = new List<Vector3>();
         actionCompleted = false;
         UICanvas = null;
         waitingForAction = false;
-        //character stats
-        playerClass = PlayerClass.Agent;
-        abilityList = new List<string>();
-        spellList = new List<string>();
+        moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        attackRangeIndicatorLocations = new List<Vector3>();
+        attackRangeIndicators = new List<GameObject>();
     }
 
     /// <summary>
@@ -180,21 +199,18 @@ public class PlayableChar : CombatChar
     {
         this.health = maxHealth;
         this.maxHealth = maxHealth;
-
         this.speed = maxSpeed;
         this.maxSpeed = maxSpeed;
-
         this.strength = strength;
-
         this.dexterity = dexterity;
-
         this.intelligence = intelligence;
-
         this.defense = defense;
-
         this.resistance = resistance;
-
         this.attackRange = attackRange;
+
+        playerClass = PlayerClass.Agent;
+        abilityList = new List<string>();
+        spellList = new List<string>();
     }
 
     // Update is called once per frame
@@ -283,6 +299,7 @@ public class PlayableChar : CombatChar
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
+        startingPosition = transform.position;
 
         //environmental effects
 
@@ -293,10 +310,6 @@ public class PlayableChar : CombatChar
         #region movement calculations
         //moveRange must be recalculated on every turn
         moveRange.Clear();
-        //holds the movement range visual which is created as squares are added to moveRange
-        Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        //holds all possible targetable locations for this turn
-        List<Vector3> attackRangeIndicatorLocations = new List<Vector3>();
 
         //this for loop runs the inner functions on every square that would be within a character's unimpeded movement range
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
@@ -313,11 +326,12 @@ public class PlayableChar : CombatChar
                 else if (Node.CheckSquare(transform.position, testMov, speed))
                 {
                     moveRange.Add(testMov);
-                    //instantiate a movement range visual square with position test here
+                    //instantiate a movement range visual square with position testMov here
                     moveRangeIndicators.Add(testMov, GameObject.Instantiate<GameObject>(GameController.MoveRangeSprite, testMov, Quaternion.identity));
                 }
 
                 //for every reachable square the entire attack range is checked for line of sight
+                //this is necessary due to the possiblity that certain squares are only visible from certain positions
                 if (moveRangeIndicators.ContainsKey(testMov))
                 {
                     for (int i = x - attackRange; i <= x + attackRange; i++)
@@ -336,8 +350,8 @@ public class PlayableChar : CombatChar
                 }
             }
         }
-        //attack range indicators are only spawned where the player can't move to so that they don't conflict with the move range indicators
-        List<GameObject> attackRangeIndicators = new List<GameObject>();
+
+        //only instantiate visuals for attack range if there is not already a visual there
         foreach (Vector3 location in attackRangeIndicatorLocations)
         {
             if (!moveRangeIndicators.ContainsKey(location))
@@ -351,13 +365,22 @@ public class PlayableChar : CombatChar
         #endregion
 
         //pause the turn flow while the user is navigating action menus
-        //bringing up the action menu is handled in Update() while
-        //the specific actions to be performed are each their own functions
-        //or coroutines depending on the complexity
+        //bringing up the action menu is handled in Update()
         actionCompleted = false;
         while (!actionCompleted) { yield return null; }
 
-        #region end of turn variable resetting
+        //sets this character back to the state it should be in for its next turn
+        ResetTurnVariables();
+
+        //this will cause the turn manager to begin the next turn
+        finishedTurn = true;
+    }
+
+    /// <summary>
+    /// Sets all game flow variables to the state they should be in at the start and end of a turn
+    /// </summary>
+    private void ResetTurnVariables()
+    {
         //destroy any UI this turn created
         GameObject.Destroy(UICanvas);
         UICanvas = null;
@@ -367,12 +390,12 @@ public class PlayableChar : CombatChar
         {
             GameObject.Destroy(moveRangeIndicator.Value);
         }
+        moveRangeIndicators.Clear();
         //removes the attack range visual
         foreach (GameObject attackRangeIndicator in attackRangeIndicators)
         {
             GameObject.Destroy(attackRangeIndicator);
         }
-        moveRangeIndicators.Clear();
         attackRangeIndicatorLocations.Clear();
         attackRangeIndicators.Clear();
 
@@ -381,10 +404,6 @@ public class PlayableChar : CombatChar
         isMoving = false;
         waitingForAction = false;
         actionCompleted = false;
-        #endregion
-
-        //this will cause the turn manager to begin the next turn
-        finishedTurn = true;
     }
 
     /// <summary>
@@ -455,7 +474,7 @@ public class PlayableChar : CombatChar
             moveSpeed = 3.5f;
         }
 
-        //will eventually prevent player from moving into unreachable squares
+        //prevents players from moving into unreachable squares
         if (!moveRange.Contains(endPos))
         {
             t = 1f;
@@ -503,7 +522,7 @@ public class PlayableChar : CombatChar
         canvas.worldCamera = Camera.main;
         canvas.planeDistance = 1;
 
-        //select the first button to enable keyboard control
+        //select the first button to enable keyboard/gamepad control
         GameObject eventSystem = GameObject.Find("EventSystem");
         eventSystem.GetComponent<EventSystem>().SetSelectedGameObject(buttonList[0]);
 
@@ -586,26 +605,34 @@ public class PlayableChar : CombatChar
             new Vector3(transform.position.x, transform.position.y + 1),
             new Vector3(transform.position.x, transform.position.y - 1)
         };
-        List<Vector3> enemyPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.transform.position).ToList();
-        List<Vector3> targets = (from pos in enemyPositions where adjacentSquares.Contains(pos) select pos).ToList(); //this is the final list with target positions
+        //creates a list of possible targets and a dictionary to hold the UI target icons based on their position
+        List<Vector3> targets = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where adjacentSquares.Contains(gameObject.transform.position) select gameObject.transform.position).ToList();
+        Dictionary<Vector3, GameObject> targetIcons = new Dictionary<Vector3, GameObject>();
+        foreach(Vector3 targetPos in targets)
+        {
+            targetIcons.Add(targetPos, null);
+        }
         //instantiates a canvas to display the action menu on
         GameObject canvasObject = Instantiate(GameController.CanvasPrefab);
         Canvas canvas = (Canvas)canvasObject.GetComponent("Canvas");
-        List<GameObject> selectionIcons = new List<GameObject>();
+        //List<GameObject> selectionIcons = new List<GameObject>();
         //creates UI for targetting
+        //after this targets[x] will always correspond to selectionIcons[x]
         for (int i = 0; i < targets.Count; i++)
         {
-            selectionIcons.Add(Instantiate(GameController.SelectionPrefab));
-            selectionIcons[i].transform.SetParent(canvasObject.transform);
+            targetIcons[targets[i]] = Instantiate(GameController.SelectionPrefab);
+            targetIcons[targets[i]].transform.SetParent(canvasObject.transform);
             Vector3 selectionPosition = Camera.main.WorldToScreenPoint(targets[i]);
-            selectionIcons[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
+            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectionPosition.x, selectionPosition.y);
         }
-        int selected = 0;
-        Destroy(selectionIcons[selected]);
-        selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
-        selectionIcons[selected].transform.SetParent(canvasObject.transform);
-        Vector3 selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
-        selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+        //changes the icon on the first target "selection icon" to a "selected icon"
+        int targetIndex = 0;
+        Vector3 selectedPosition = targets[targetIndex];
+        Destroy(targetIcons[selectedPosition]);
+        targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
+        targetIcons[selectedPosition].transform.SetParent(canvasObject.transform);
+        Vector3 selectedScreenPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
         canvas.worldCamera = Camera.main;
         canvas.planeDistance = 1;
         UICanvas = canvasObject;
@@ -616,36 +643,36 @@ public class PlayableChar : CombatChar
         {
             yield return null;
 
-            int lastSelected = selected;
-
-            //changes which enemy is selected based on next and previous input
+            //changes which enemy is selected based on next and previous input and keeps track of the last selected position
+            Vector3 lastSelectedPosition = selectedPosition;
             if (Input.GetButtonDown("Next"))
             {
-                selected++;
+                targetIndex++;
+                if (targetIndex > targets.Count - 1) { targetIndex = 0; }
             }
             if (Input.GetButtonDown("Previous"))
             {
-                selected--;
+                targetIndex--;
+                if (targetIndex < 0) { targetIndex = targets.Count - 1; }
             }
-            //redraws the UI if the selected enemy changes
-            if (lastSelected != selected)
-            {
-                if (selected < 0) { selected = selectionIcons.Count - 1; }
-                if (selected > selectionIcons.Count - 1) { selected = 0; }
+            selectedPosition = targets[targetIndex];
 
+            //redraws the UI if the selected enemy changes
+            if (lastSelectedPosition != selectedPosition)
+            {
                 canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
-                //sets the previously selected square to have selectable UI
-                Destroy(selectionIcons[lastSelected]);
-                selectionIcons[lastSelected] = Instantiate(GameController.SelectionPrefab);
-                selectionIcons[lastSelected].transform.SetParent(canvasObject.transform);
-                selectedPosition = Camera.main.WorldToScreenPoint(targets[lastSelected]);
-                selectionIcons[lastSelected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+                //sets the previously selected square to have selection UI
+                Destroy(targetIcons[lastSelectedPosition]);
+                targetIcons[lastSelectedPosition] = Instantiate(GameController.SelectionPrefab);
+                targetIcons[lastSelectedPosition].transform.SetParent(canvasObject.transform);
+                selectedScreenPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
+                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
                 //sets the newly selected square to have selected UI
-                Destroy(selectionIcons[selected]);
-                selectionIcons[selected] = Instantiate(GameController.SelectedPrefab);
-                selectionIcons[selected].transform.SetParent(canvasObject.transform);
-                selectedPosition = Camera.main.WorldToScreenPoint(targets[selected]);
-                selectionIcons[selected].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedPosition.x, selectedPosition.y);
+                Destroy(targetIcons[selectedPosition]);
+                targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
+                targetIcons[selectedPosition].transform.SetParent(canvasObject.transform);
+                selectedScreenPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = new Vector2(selectedScreenPosition.x, selectedScreenPosition.y);
                 //resets the camera
                 canvas.worldCamera = Camera.main;
                 canvas.planeDistance = 1;
@@ -666,8 +693,8 @@ public class PlayableChar : CombatChar
         //removes UI as attack goes through
         Destroy(UICanvas);
 
-        //gets the enemy who's position matches the currently selected square
-        CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == targets[selected] select gameObject).ToList()[0].GetComponent<CombatChar>();
+        //gets the enemy whose position matches the currently selected square
+        CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
 
         //calculates damage to apply and calls TakeDamage()
         int damage = strength /*+ weapon damage*/ - target.Defense;

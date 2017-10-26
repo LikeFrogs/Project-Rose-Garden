@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// NPC combat participants
+/// </summary>
 public class Enemy : CombatChar
 {
     #region Stats fields and properties
@@ -99,6 +102,14 @@ public class Enemy : CombatChar
     public override bool FinishedTurn
     {
         get { return finishedTurn; }
+        set
+        {
+            finishedTurn = value;
+            if (finishedTurn == false)
+            {
+                //ResetTurnVariables();
+            }
+        }
     }
     /// <summary>
     /// Gets true when taking damage and false otherwise
@@ -106,6 +117,7 @@ public class Enemy : CombatChar
     public override bool TakingDamage
     {
         get { return takingDamage; }
+        
     }
     #endregion
 
@@ -153,12 +165,13 @@ public class Enemy : CombatChar
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
 
-        yield return null;
-
         Debug.Log("This enemy takes a turn!");
 
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
+
+
+        yield return null;
     }
 
     /// <summary>

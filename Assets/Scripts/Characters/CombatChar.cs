@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Parent class for all characters that participate in combat, playable or otherwise
+/// </summary>
 public abstract class CombatChar : MonoBehaviour
 {
     /// <summary>
@@ -49,7 +52,7 @@ public abstract class CombatChar : MonoBehaviour
     /// This bool will be set to true at the end of a character's turn.
     /// This will be used to tell the turn handler to move on to the next turn.
     /// </summary>
-    public abstract bool FinishedTurn { get; }
+    public abstract bool FinishedTurn { get; set; }
     /// <summary>
     /// Gets true when taking damage and false otherwise
     /// </summary>

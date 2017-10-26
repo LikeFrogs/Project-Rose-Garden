@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+/// <summary>
+/// Used for pathfinding
+/// </summary>
 public class Node
 {
     #region Fields and Properties

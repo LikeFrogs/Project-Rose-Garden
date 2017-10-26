@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Controls the overall flow of the game and holds all important static GameObjects
+/// </summary>
 public class GameController : MonoBehaviour
 {
     #region Prefabs
@@ -93,11 +96,6 @@ public class GameController : MonoBehaviour
             }
         }
     }
-
-    public List<PlayableChar> Party
-    {
-        get { return party; }
-    }
     #endregion
 
     // Use this for initialization
@@ -125,8 +123,8 @@ public class GameController : MonoBehaviour
         party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
         party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 3, 15, 15, 15, 15, 2, 5);
-        party[1].GetComponent<PlayableChar>().Init(30, 7, 15, 15, 15, 15, 2, 1);
+        party[0].GetComponent<PlayableChar>().Init(30, 3, 10, 15, 15, 15, 2, 5);
+        party[1].GetComponent<PlayableChar>().Init(30, 7, 10, 15, 15, 15, 2, 1);
 
         SceneManager.LoadScene("TestScene");
     }
@@ -138,9 +136,8 @@ public class GameController : MonoBehaviour
         if (sceneLoaded)
         {
             sceneLoaded = false;
-            SceneController manager = GameObject.FindWithTag("SceneManager").GetComponent<SceneController>();
-            //manager.AddToCharList(party);
-            manager.BeginPlay(party);
+            SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
+            controller.StartScene(party);
         }
 	}
 
@@ -151,13 +148,4 @@ public class GameController : MonoBehaviour
     {
         sceneLoaded = true;
     }
-    
-    /// <summary>
-    /// Removes the sceneLoaded delegate if this object is ever disabled
-    /// </summary>
-    private void OnDisable()
-    {
-        SceneManager.sceneLoaded -= BeginScene;
-    }
-
 }

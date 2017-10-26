@@ -78,14 +78,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Combat\CombatChar.cs" />
-    <Compile Include="Assets\Scripts\Combat\Enemy.cs" />
-    <Compile Include="Assets\Scripts\Combat\GameController.cs" />
-    <Compile Include="Assets\Scripts\Combat\Node.cs" />
-    <Compile Include="Assets\Scripts\Combat\PlayableChar.cs" />
-    <Compile Include="Assets\Scripts\Combat\SceneController.cs" />
-    <Compile Include="Assets\Scripts\Combat\TestScene\InitializerAndTurnTest.cs" />
-    <Compile Include="Assets\Scripts\Combat\TurnHandler.cs" />
+    <Compile Include="Assets\Scripts\Characters\CombatChar.cs" />
+    <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
+    <Compile Include="Assets\Scripts\Characters\Node.cs" />
+    <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
+    <Compile Include="Assets\Scripts\Characters\Weapon.cs" />
+    <Compile Include="Assets\Scripts\GameController.cs" />
+    <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
+    <Compile Include="Assets\Scripts\SceneContollers\NonCombatSceneController.cs" />
+    <Compile Include="Assets\Scripts\SceneContollers\SceneController.cs" />
+    <Compile Include="Assets\Scripts\SceneContollers\TestScene\InitializerAndTurnTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
