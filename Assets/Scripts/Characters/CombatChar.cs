@@ -16,6 +16,14 @@ public abstract class CombatChar : MonoBehaviour
     /// </summary>
     public abstract int MaxHealth { get; }
     /// <summary>
+    /// Character's current MP
+    /// </summary>
+    public abstract int MutationPoints { get; }
+    /// <summary>
+    /// Character's maximum MP
+    /// </summary>
+    public abstract int MaxMutationPoints { get; }
+    /// <summary>
     /// Character's movement speed
     /// </summary>
     public abstract int Speed { get; }
@@ -26,15 +34,11 @@ public abstract class CombatChar : MonoBehaviour
     /// <summary>
     /// Character's strength. Used for physical damage
     /// </summary>
-    public abstract int Strength { get; }
+    public abstract int Attack { get; }
     /// <summary>
     /// Character's dexterity. Used for speed and initiative
     /// </summary>
-    public abstract int Dexterity { get; }
-    /// <summary>
-    /// Character's intelligence. Used for magic damage
-    /// </summary>
-    public abstract int Intelligence { get; }
+    public abstract int MagicAttack { get; }
     /// <summary>
     /// Character's defense. Used to defend against physical attacks
     /// </summary>
@@ -58,6 +62,8 @@ public abstract class CombatChar : MonoBehaviour
     /// </summary>
     public abstract bool TakingDamage { get; }
 
+
+
     //calculates initiative for the character for the turn
     //implemented differently in PCs and NPCs
     public abstract int GetInitiative();
@@ -67,5 +73,9 @@ public abstract class CombatChar : MonoBehaviour
     /// </summary>
     public abstract void BeginTurn();
 
+    /// <summary>
+    /// Starts the coroutine that handles a character taking damage
+    /// </summary>
+    /// <param name="damage">The amount of damage to take</param>
     public abstract void BeginTakeDamage(int damage);
 }

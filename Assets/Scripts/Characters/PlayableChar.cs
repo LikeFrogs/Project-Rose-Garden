@@ -5,137 +5,83 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
 
-public enum PlayerClass { Agent, Assassin, DroneCommander, Grenadier, Pistoleer, Sniper, Tank }
-
 /// <summary>
 /// A playable character
 /// </summary>
-public class PlayableChar : CombatChar
+public abstract class PlayableChar : CombatChar
 {
     #region Stats fields and properties
-    private int health;
-    private int maxHealth;
-    private int speed;
-    private int maxSpeed;
-    private int strength;
-    private int dexterity;
-    private int intelligence;
-    private int defense;
-    private int resistance;
-    private int attackRange;
+    protected int health;
+    protected int maxHealth;
+    protected int mutationPoints; //not in base class
+    protected int maxMutationPoints; //not in base class
+    protected int speed;
+    protected int maxSpeed;
+    protected int attack;
+    protected int magicAttack;
+    protected int defense;
+    protected int resistance;
 
-    private PlayerClass playerClass;
-    private List<string> abilityList;
-    private List<string> spellList;
 
     /// <summary>
-    /// Gets character's current health
+    /// Character's current health
     /// </summary>
-    public override int Health
-    {
-        get { return health; }
-    }
+    public abstract override int Health { get; }
     /// <summary>
-    /// Gets character's maximum health
+    /// Character's maximum health
     /// </summary>
-    public override int MaxHealth
-    {
-        get { return maxHealth; }
-    }
+    public abstract override int MaxHealth { get; }
     /// <summary>
-    /// Gets character's movement speed
+    /// Character's current MP
     /// </summary>
-    public override int Speed
-    {
-        get { return speed; }
-    }
+    public abstract override int MutationPoints { get; }
     /// <summary>
-    /// Gets character's max speed
+    /// Character's maximum MP
     /// </summary>
-    public override int MaxSpeed
-    {
-        get { return maxSpeed; }
-    }
+    public abstract override int MaxMutationPoints { get; }
     /// <summary>
-    /// Gets character's strength. Used for physical damage
+    /// Character's movement speed
     /// </summary>
-    public override int Strength
-    {
-        get { return strength; }
-    }
+    public abstract override int Speed { get; }
     /// <summary>
-    /// Gets character's dexterity. Used for speed and initiative
+    /// Character's max speed
     /// </summary>
-    public override int Dexterity
-    {
-        get { return dexterity; }
-    }
+    public abstract override int MaxSpeed { get; }
     /// <summary>
-    /// Gets character's intelligence. Used for magic damage
+    /// Character's attack. Used for physical damage
     /// </summary>
-    public override int Intelligence
-    {
-        get { return intelligence; }
-    }
+    public abstract override int Attack { get; }
     /// <summary>
-    /// Gets character's defense. Used to defend against physical attacks
+    /// Character's magic attack. Used for magic attack
     /// </summary>
-    public override int Defense
-    {
-        get { return defense; }
-    }
+    public abstract override int MagicAttack { get; }
     /// <summary>
-    /// Gets character's resistance. Used to defend against magical attacks
+    /// Character's defense. Used to defend against physical attacks
     /// </summary>
-    public override int Resistance
-    {
-        get { return resistance; }
-    }
+    public abstract override int Defense { get; }
+    /// <summary>
+    /// Character's resistance. Used to defend against magical attacks
+    /// </summary>
+    public abstract override int Resistance { get; }
     /// <summary>
     /// Gets character's attack range
     /// </summary>
-    public override int AttackRange
-    {
-        get { return attackRange; }
-    }
-
-    /// <summary>
-    /// Gets character's class
-    /// </summary>
-    public PlayerClass Class
-    {
-        get { return playerClass; }
-    }
-    /// <summary>
-    /// Gets character's abilities
-    /// </summary>
-    public List<string> AbilityList
-    {
-        get { return abilityList; }
-    }
-    /// <summary>
-    /// Gets character's spells
-    /// </summary>
-    public List<string> SpellList
-    {
-        get { return spellList; }
-    }
+    public abstract override int AttackRange { get; }
     #endregion
 
     #region Fields and properties for game flow
-    private bool finishedTurn;
-    private bool takingDamage;
+    protected bool finishedTurn;
+    protected bool takingDamage;
 
     //these all store either data that tells this class when to perform certain actions or objects that need to be accessed from more than one method
-    private Vector3 startingPosition;
-    private bool movePhase;
-    private bool isMoving;
-    private List<Vector3> moveRange;
-    private bool actionCompleted;
-    private GameObject UICanvas;
-    private GameObject MovementCanvas;
-    private bool waitingForAction;
-
+    protected Vector3 startingPosition;
+    protected bool movePhase;
+    protected bool isMoving;
+    protected List<Vector3> moveRange;
+    protected bool actionCompleted;
+    protected GameObject UICanvas;
+    protected GameObject MovementCanvas;
+    protected bool waitingForAction;
 
     /// <summary>
     /// This bool will be set to true at the end of a character's turn.
@@ -190,22 +136,16 @@ public class PlayableChar : CombatChar
     /// <summary>
     /// Sets up the stats of this character. Should only be called at character creation.
     /// </summary>
-    public void Init(int maxHealth, int maxSpeed, int strength, int dexterity, int intelligence, int defense, int resistance, int attackRange)
+    public void Init(int maxHealth, int maxSpeed, int attack, int magicAttack, int defense, int resistance)
     {
         this.health = maxHealth;
         this.maxHealth = maxHealth;
         this.speed = maxSpeed;
         this.maxSpeed = maxSpeed;
-        this.strength = strength;
-        this.dexterity = dexterity;
-        this.intelligence = intelligence;
+        this.attack = attack;
+        this.magicAttack = magicAttack;
         this.defense = defense;
         this.resistance = resistance;
-        this.attackRange = attackRange;
-
-        playerClass = PlayerClass.Agent;
-        abilityList = new List<string>();
-        spellList = new List<string>();
     }
 
     // Update is called once per frame
@@ -349,9 +289,9 @@ public class PlayableChar : CombatChar
         {
             int x = (int)moveRangeIndicator.Key.x;
             int y = (int)moveRangeIndicator.Key.y;
-            for (int i = x - attackRange; i <= x + attackRange; i++)
+            for (int i = x - AttackRange; i <= x + AttackRange; i++)
             {
-                for (int j = y - (attackRange - System.Math.Abs(x - i)); System.Math.Abs(x - i) + System.Math.Abs(y - j) <= attackRange; j++)
+                for (int j = y - (AttackRange - System.Math.Abs(x - i)); System.Math.Abs(x - i) + System.Math.Abs(y - j) <= AttackRange; j++)
                 {
                     Vector3 testAtk = new Vector3(i, j);
 
@@ -369,16 +309,18 @@ public class PlayableChar : CombatChar
             }
         }
 
-        List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= attackRange select enemy).ToList();
-        foreach (GameObject enemy in enemyList)
-        {
-            if (!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
-            {
-                GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
-                newIndicator.transform.SetParent(MovementCanvas.transform);
-                newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
-            }
-        }
+        DrawTargets();
+
+        //List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= AttackRange select enemy).ToList();
+        //foreach (GameObject enemy in enemyList)
+        //{
+        //    if (!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
+        //    {
+        //        GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
+        //        newIndicator.transform.SetParent(MovementCanvas.transform);
+        //        newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
+        //    }
+        //}
 
 
         //turns on player movement
@@ -495,29 +437,22 @@ public class PlayableChar : CombatChar
             yield return null;
         }
 
-        foreach(GameObject oldIndicator in GameObject.FindGameObjectsWithTag("SelectionIcon"))
-        {
-            Destroy(oldIndicator);
-        }
-        List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= attackRange select enemy).ToList();
-        foreach(GameObject enemy in enemyList)
-        {
-            if(!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
-            {
-                GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
-                newIndicator.transform.SetParent(MovementCanvas.transform);
-                newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
-            }
-        }
+        //highlights all enemies targetable from this space
+        DrawTargets();
 
         //when done moving allow more input to be received
         isMoving = false;
     }
 
     /// <summary>
+    /// highlights all enemies targetable from this space
+    /// </summary>
+    protected abstract void DrawTargets();
+
+    /// <summary>
     /// Instantiates UI buttons for all possible actions
     /// </summary>
-    private void ActionMenu()
+    protected void ActionMenu()
     {
         //instantiates a canvas to display the action menu on
         UICanvas = Instantiate(GameController.CanvasPrefab);
@@ -554,45 +489,7 @@ public class PlayableChar : CombatChar
     /// Determines which actions the character can take from it's current position
     /// </summary>
     /// <returns>A list of strings representing all possible actions</returns>
-    private List<string> GetActions()
-    {
-        List<string> actionList = new List<string>();
-
-        //checks to see if there are enemies in adjacent squares and adds "Melee" to the action list if so
-        List<Vector3> adjacentSquares = new List<Vector3>
-        {
-            new Vector3(transform.position.x - 1, transform.position.y),
-            new Vector3(transform.position.x + 1, transform.position.y),
-            new Vector3(transform.position.x, transform.position.y + 1),
-            new Vector3(transform.position.x, transform.position.y - 1)
-        };
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject enemy in enemies)
-        {
-            if (adjacentSquares.Contains(enemy.transform.position))
-            {
-                actionList.Add("Melee");
-                break;
-            }
-        }
-
-        //checks if this character knows any abiliities and adds "Ability" if so
-        if (abilityList.Count > 0)
-        {
-            actionList.Add("Ability");
-        }
-
-        //checks if this character knows any spells and adds "Spell" if so
-        if (spellList.Count > 0)
-        {
-            actionList.Add("Spell");
-        }
-
-        //"End" vs "Defend" ??
-        actionList.Add("End");
-
-        return actionList;
-    }
+    protected abstract List<string> GetActions();
 
     /// <summary>
     /// Ends the character's turn without performing any other actions
@@ -603,114 +500,9 @@ public class PlayableChar : CombatChar
         yield break;
     }
 
-    /// <summary>
-    /// Allows the character to make a melee attack
-    /// </summary>
-    private IEnumerator Melee()
-    {
-        waitingForAction = false; //this variable refers only to the main action menu
-
-        #region UI set-up
-        //removes the action menu before bringing up the next one
-        Destroy(UICanvas);
-        //creates a list of Vector3's with attackable targets
-        List<Vector3> adjacentSquares = new List<Vector3>
-        {
-            new Vector3(transform.position.x - 1, transform.position.y),
-            new Vector3(transform.position.x + 1, transform.position.y),
-            new Vector3(transform.position.x, transform.position.y + 1),
-            new Vector3(transform.position.x, transform.position.y - 1)
-        };
-        //creates a list of possible targets and a dictionary to hold the UI target icons based on their position
-        List<Vector3> targets = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where adjacentSquares.Contains(gameObject.transform.position) select gameObject.transform.position).ToList();
-        Dictionary<Vector3, GameObject> targetIcons = new Dictionary<Vector3, GameObject>();
-        foreach(Vector3 targetPos in targets)
-        {
-            targetIcons.Add(targetPos, null);
-        }
-        //instantiates a canvas to display the action menu on
-        UICanvas = Instantiate(GameController.CanvasPrefab);
-        //creates UI for targetting
-        for (int i = 0; i < targets.Count; i++)
-        {
-            targetIcons[targets[i]] = Instantiate(GameController.SelectionPrefab);
-            targetIcons[targets[i]].transform.SetParent(UICanvas.transform);
-            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(targets[i]);
-        }
-        //changes the icon on the first target "selection icon" to a "selected icon"
-        int targetIndex = 0;
-        Vector3 selectedPosition = targets[targetIndex];
-        Destroy(targetIcons[selectedPosition]);
-        targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-        targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-        #endregion
-
-        //waits while the user is selecting a target
-        while (true)
-        {
-            yield return null;
-
-            //changes which enemy is selected based on next and previous input and keeps track of the last selected position
-            Vector3 lastSelectedPosition = selectedPosition;
-            if (Input.GetButtonDown("Next"))
-            {
-                targetIndex++;
-                if (targetIndex > targets.Count - 1) { targetIndex = 0; }
-            }
-            if (Input.GetButtonDown("Previous"))
-            {
-                targetIndex--;
-                if (targetIndex < 0) { targetIndex = targets.Count - 1; }
-            }
-            selectedPosition = targets[targetIndex];
-
-            //redraws the UI if the selected enemy changes
-            if (lastSelectedPosition != selectedPosition)
-            {
-                //canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
-                //sets the previously selected square to have selection UI
-                Destroy(targetIcons[lastSelectedPosition]);
-                targetIcons[lastSelectedPosition] = Instantiate(GameController.SelectionPrefab);
-                targetIcons[lastSelectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
-                //sets the newly selected square to have selected UI
-                Destroy(targetIcons[selectedPosition]);
-                targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-                targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-            }
-
-            //confirms attack target
-            if (Input.GetButtonDown("Submit")) { break; }
-            //returns to the previous action menu
-            if (Input.GetButtonDown("Cancel"))
-            {
-                Destroy(UICanvas);
-                ActionMenu();
-                yield break;
-            }
-        }
-
-        //removes UI as attack goes through
-        Destroy(UICanvas);
-        Destroy(MovementCanvas);
-
-        //gets the enemy whose position matches the currently selected square
-        CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
-
-        //calculates damage to apply and calls TakeDamage()
-        int damage = strength /*+ weapon damage*/ - target.Defense;
-        target.BeginTakeDamage(damage);
-        while (target.TakingDamage) { yield return null; }
-
-
-
-        //allows TakeTurn to finish
-        actionCompleted = true;
-    }
 
     //not yet implemented
+    //prolly should make these abstract and move them to subclasses
     private IEnumerator Ability()
     {
         yield break;
@@ -720,13 +512,8 @@ public class PlayableChar : CombatChar
         yield break;
     }
 
-    #region Level up mnthods
     /// <summary>
-    /// Levels up this character if it is an Agent
+    /// Levels up this character
     /// </summary>
-    private void AgentLevelUP()
-    {
-        Debug.Log("This works!");
-    }
-    #endregion
+    protected abstract void LevelUp();
 }

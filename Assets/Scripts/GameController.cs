@@ -98,6 +98,19 @@ public class GameController : MonoBehaviour
     }
     #endregion
 
+    #region Party inventory
+    protected List<Item> inventory;
+
+    /// <summary>
+    /// All items in this character's inventory
+    /// </summary>
+    public List<Item> Inventory
+    {
+        get { return inventory; }
+    }
+    #endregion
+
+
     // Use this for initialization
     void Awake ()
     {
@@ -123,8 +136,8 @@ public class GameController : MonoBehaviour
         party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
         party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 3, 10, 15, 15, 15, 2, 5);
-        party[1].GetComponent<PlayableChar>().Init(30, 7, 10, 15, 15, 15, 2, 1);
+        party[0].GetComponent<PlayableChar>().Init(30, 3, 5, 15, 15, 2);
+        party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
 
         SceneManager.LoadScene("TestScene");
     }

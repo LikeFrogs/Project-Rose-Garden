@@ -2,22 +2,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum EnemyStatus { Patrolling, Attacking, Hunting }
+
 /// <summary>
 /// NPC combat participants
 /// </summary>
 public class Enemy : CombatChar
 {
     #region Stats fields and properties
-    private int health;
-    private int maxHealth;
-    private int speed;
-    private int maxSpeed;
-    private int strength;
-    private int dexterity;
-    private int intelligence;
-    private int defense;
-    private int resistance;
-    private int attackRange;
+    protected int health;
+    [SerializeField] int maxHealth;
+    protected int mutationPoints;
+    [SerializeField] int maxMutationPoints;
+    [SerializeField] int speed;
+    protected int maxSpeed;
+    [SerializeField] int attack;
+    [SerializeField] int magicAttack;
+    [SerializeField] int defense;
+    [SerializeField] int resistance;
+    [SerializeField] int attackRange;
 
     /// <summary>
     /// Gets character's current health
@@ -34,6 +37,20 @@ public class Enemy : CombatChar
         get { return maxHealth; }
     }
     /// <summary>
+    /// Character's current MP
+    /// </summary>
+    public override int MutationPoints
+    {
+        get { return mutationPoints; }
+    }
+    /// <summary>
+    /// Character's maximum MP
+    /// </summary>
+    public override int MaxMutationPoints
+    {
+        get { return MaxMutationPoints; }
+    }
+    /// <summary>
     /// Gets character's movement speed
     /// </summary>
     public override int Speed
@@ -48,25 +65,18 @@ public class Enemy : CombatChar
         get { return maxSpeed; }
     }
     /// <summary>
-    /// Gets character's strength. Used for physical damage
+    /// Gets character's attack. Used for physical damage
     /// </summary>
-    public override int Strength
+    public override int Attack
     {
-        get { return strength; }
+        get { return attack; }
     }
     /// <summary>
-    /// Gets character's dexterity. Used for speed and initiative
+    /// Gets character's magic attack. Used for magic damage
     /// </summary>
-    public override int Dexterity
+    public override int MagicAttack
     {
-        get { return dexterity; }
-    }
-    /// <summary>
-    /// Gets character's intelligence. Used for magic damage
-    /// </summary>
-    public override int Intelligence
-    {
-        get { return intelligence; }
+        get { return magicAttack; }
     }
     /// <summary>
     /// Gets character's defense. Used to defend against physical attacks
@@ -92,8 +102,13 @@ public class Enemy : CombatChar
     #endregion
 
     #region Fields and properties for game flow
-    private bool finishedTurn;
-    private bool takingDamage;
+    protected EnemyStatus status;
+    [SerializeField] List<Vector3> patrolPositions;
+    protected int patrolPositionIndex;
+    protected bool isMoving;
+
+    protected bool finishedTurn;
+    protected bool takingDamage;
 
     /// <summary>
     /// This bool will be set to true at the end of a character's turn.
@@ -127,19 +142,22 @@ public class Enemy : CombatChar
     {
         //inherited control variables
         finishedTurn = false;
-        //ID???
 
-        //inherited stats
-        health = 10;
-        maxHealth = 10;
-        speed = 0;
-        maxSpeed = 0;
-        strength = 10;
-        dexterity = 10;
-        intelligence = 10;
-        defense = 5;
-        resistance = 5;
-        attackRange = 5;
+        //////stats
+        ////health = 10;
+        ////maxHealth = 10;
+        ////speed = 0;
+        ////maxSpeed = 0;
+        ////defense = 5;
+        ////resistance = 5;
+        ////attackRange = 5;
+
+        health = maxHealth;
+        mutationPoints = maxMutationPoints;
+        speed = maxSpeed;
+
+        status = EnemyStatus.Patrolling;
+        patrolPositionIndex = -1;
     }
 
     // Update is called once per frame
@@ -154,25 +172,75 @@ public class Enemy : CombatChar
     /// </summary>
     public override void BeginTurn()
     {
-        StartCoroutine("TakeTurn");
+        if (status == EnemyStatus.Patrolling)
+        {
+            StartCoroutine("Patroll");
+        }
     }
 
     /// <summary>
     /// Handles the entire turn for this enemy
     /// </summary>
-    protected IEnumerator TakeTurn()
+    protected IEnumerator Patroll()
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
 
-        Debug.Log("This enemy takes a turn!");
+        //keep up with the position that the character will move to next and
+        //start its next turn in (assuming nothing happens to change the character's state
+        patrolPositionIndex++;
+        if(patrolPositionIndex >= patrolPositions.Count) { patrolPositionIndex = 0; }
 
+        //gets a path to the next 
+        List<Vector3> path = null;
+        if (transform.position != patrolPositions[patrolPositionIndex])
+        {
+            path = Node.FindPath(transform.position, patrolPositions[patrolPositionIndex]);
+        }
+
+        if(path != null)
+        {
+            foreach(Vector3 position in path)
+            {
+                StartCoroutine(Move(position));
+                //wait until finished moving
+                while (isMoving) { yield return null; }
+                //**************************************** Do any vision checks and reactions here after the enemy finishes its move to the next square *************************************************
+            }
+        }
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
-
-
-        yield return null;
     }
+
+    /// <summary>
+    /// Smoothly moves the character from their current position to a position one tile in the direction of input
+    /// </summary>
+    /// <param name="input">The target position to move to</param>
+    private IEnumerator Move(Vector3 endPos)
+    {
+        isMoving = true; //while running this routine the AI waits to resume 
+        Vector3 startPos = transform.position;
+        float t = 0; //time
+        float moveSpeed = 5;
+
+        //prevents players from moving into unreachable squares
+        //if (!moveRange.Contains(endPos))
+        //{
+        //    t = 1f;
+        //}
+
+        //smoothly moves the character across the distance with lerp
+        while (t < 1f)
+        {
+            t += Time.deltaTime * moveSpeed;
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        //when done moving allow more input to be received
+        isMoving = false;
+    }
+
 
     /// <summary>
     /// Calculates the initiative of the enemy

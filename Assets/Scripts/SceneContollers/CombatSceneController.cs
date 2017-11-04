@@ -8,13 +8,17 @@ using System.Linq;
 /// </summary>
 public abstract class CombatSceneController : MonoBehaviour, SceneController
 {
-    //// Use this for initialization
-    //void Start () {
-    //}
+    [SerializeField] Vector3 bottomLeftCorner;
+    [SerializeField] Vector3 topRightCorner;
 
-    //// Update is called once per frame
-    //void Update () {
-    //}
+    /// <summary>
+    /// Gets the bottom left corner of the play area
+    /// </summary>
+    public Vector3 BottomLeftCorner { get { return bottomLeftCorner; } }
+    /// <summary>
+    /// Gets the top right corner of the play area
+    /// </summary>
+    public Vector3 TopRightCorner { get { return topRightCorner; } }
 
     /// <summary>
     /// Begins play

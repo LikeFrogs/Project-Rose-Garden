@@ -78,12 +78,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Characters\Classes\Agent.cs" />
+    <Compile Include="Assets\Scripts\Characters\Classes\TestClass.cs" />
     <Compile Include="Assets\Scripts\Characters\CombatChar.cs" />
     <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
     <Compile Include="Assets\Scripts\Characters\Node.cs" />
     <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
-    <Compile Include="Assets\Scripts\Characters\Weapon.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />
+    <Compile Include="Assets\Scripts\Item\Item.cs" />
+    <Compile Include="Assets\Scripts\Item\MeleeWeapon.cs" />
+    <Compile Include="Assets\Scripts\Item\RangedWeapon.cs" />
+    <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
+    <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\NonCombatSceneController.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\SceneController.cs" />
