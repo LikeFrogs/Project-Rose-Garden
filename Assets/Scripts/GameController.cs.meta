@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: 63bdf872cd2be3946adeea9d040f91a5
-timeCreated: 1509000812
+timeCreated: 1509839660
 licenseType: Free
 MonoImporter:
   serializedVersion: 2
@@ -18,6 +18,8 @@ MonoImporter:
   - selectedSquare: {fileID: 1173001239561544, guid: 4477b31e93f490c49961e4eccc20bf77,
       type: 2}
   - attackSquare: {fileID: 1618723863189448, guid: 77d345428f98ce346b6ebea19e556c89,
+      type: 2}
+  - sightSquare: {fileID: 1310700567712018, guid: 6f9c22e8ea2e5c645a6ee3c888212380,
       type: 2}
   executionOrder: 0
   icon: {instanceID: 0}

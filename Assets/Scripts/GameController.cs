@@ -18,6 +18,7 @@ public class GameController : MonoBehaviour
     [SerializeField] GameObject selectionSquare;
     [SerializeField] GameObject selectedSquare;
     [SerializeField] GameObject attackSquare;
+    [SerializeField] GameObject sightSquare;
 
     //static version of prefabs to be set in Awake()
     private static GameObject moveRangeSprite;
@@ -26,6 +27,7 @@ public class GameController : MonoBehaviour
     private static GameObject selectionPrefab;
     private static GameObject selectedPrefab;
     private static GameObject attackPrefab;
+    private static GameObject sightPrefab;
 
     //static prefab properties to be accessed by other classes
     /// <summary>
@@ -69,6 +71,13 @@ public class GameController : MonoBehaviour
     public static GameObject AttackSquarePrefab
     {
         get { return attackPrefab; }
+    }
+    /// <summary>
+    /// Gets the visual for displaying an enemy sight cone
+    /// </summary>
+    public static GameObject SightSquarePrefab
+    {
+        get { return sightPrefab; }
     }
     #endregion
 
@@ -126,6 +135,7 @@ public class GameController : MonoBehaviour
         selectionPrefab = selectionSquare;
         selectedPrefab = selectedSquare;
         attackPrefab = attackSquare;
+        sightPrefab = sightSquare;
 
         //begin play before any new scenes have been loaded
         sceneLoaded = false;
@@ -133,13 +143,13 @@ public class GameController : MonoBehaviour
         //this is where character creation and such should be done
         party = new List<PlayableChar>();
 
-        party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
-        party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
+        //party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
+        //party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 3, 5, 15, 15, 2);
-        party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
+        //party[0].GetComponent<PlayableChar>().Init(30, 3, 5, 15, 15, 2);
+        //party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
 
-        SceneManager.LoadScene("TestScene");
+        //SceneManager.LoadScene("TestScene");
     }
 
 	// Update is called once per frame

@@ -106,6 +106,12 @@ public class Enemy : CombatChar
     [SerializeField] List<Vector3> patrolPositions;
     protected int patrolPositionIndex;
     protected bool isMoving;
+    protected bool isTurning;
+    [SerializeField] int visionRange;
+    [SerializeField] int currentFacingAngle;
+    [SerializeField] int visionAngle;
+    Dictionary<Vector3, GameObject> sightConeIndicators;
+    protected GameObject sightCanvas;
 
     protected bool finishedTurn;
     protected bool takingDamage;
@@ -141,7 +147,8 @@ public class Enemy : CombatChar
     protected void Awake()
     {
         //inherited control variables
-        finishedTurn = false;
+        finishedTurn = true; //********************************************************************************************************************SET TO TRUE
+        isTurning = false;
 
         //////stats
         ////health = 10;
@@ -158,12 +165,19 @@ public class Enemy : CombatChar
 
         status = EnemyStatus.Patrolling;
         patrolPositionIndex = -1;
+
+        //visionAngle = 90;
+
+        sightConeIndicators = new Dictionary<Vector3, GameObject>();
     }
 
     // Update is called once per frame
     void Update()
     {
-
+        if (finishedTurn) //*******************************************************************************************************************REMOVE
+        {
+            StartCoroutine("Patrol");
+        }
     }
 
 
@@ -174,17 +188,19 @@ public class Enemy : CombatChar
     {
         if (status == EnemyStatus.Patrolling)
         {
-            StartCoroutine("Patroll");
+            StartCoroutine("Patrol");
         }
     }
 
     /// <summary>
     /// Handles the entire turn for this enemy
     /// </summary>
-    protected IEnumerator Patroll()
+    protected IEnumerator Patrol()
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
+
+        CalculateVisionCone();
 
         //keep up with the position that the character will move to next and
         //start its next turn in (assuming nothing happens to change the character's state
@@ -208,6 +224,10 @@ public class Enemy : CombatChar
                 //**************************************** Do any vision checks and reactions here after the enemy finishes its move to the next square *************************************************
             }
         }
+
+
+        CalculateVisionCone();
+
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
     }
@@ -216,18 +236,34 @@ public class Enemy : CombatChar
     /// Smoothly moves the character from their current position to a position one tile in the direction of input
     /// </summary>
     /// <param name="input">The target position to move to</param>
-    private IEnumerator Move(Vector3 endPos)
+    protected IEnumerator Move(Vector3 endPos)
     {
         isMoving = true; //while running this routine the AI waits to resume 
         Vector3 startPos = transform.position;
         float t = 0; //time
-        float moveSpeed = 5;
+        float moveSpeed = 5f;
 
-        //prevents players from moving into unreachable squares
-        //if (!moveRange.Contains(endPos))
-        //{
-        //    t = 1f;
-        //}
+
+        if (endPos.x == startPos.x - 1 && currentFacingAngle != 180)
+        {
+            StartCoroutine(Turn(180));
+        }
+        else if (endPos.x == startPos.x + 1 && currentFacingAngle != 0)
+        {
+            StartCoroutine(Turn(0));
+        }
+        else if (endPos.y == startPos.y - 1 && currentFacingAngle != 270)
+        {
+            StartCoroutine(Turn(270));
+        }
+        else if (endPos.y == startPos.y + 1 && currentFacingAngle != 90)
+        {
+            StartCoroutine(Turn(90));
+        }
+
+        while (isTurning) { yield return null; }
+
+
 
         //smoothly moves the character across the distance with lerp
         while (t < 1f)
@@ -237,9 +273,193 @@ public class Enemy : CombatChar
             yield return null;
         }
 
+        CalculateVisionCone();
+
         //when done moving allow more input to be received
         isMoving = false;
     }
+
+
+
+
+
+
+
+
+
+    protected void CalculateVisionCone()
+    {
+        Destroy(sightCanvas);
+
+        //determines the bounds of the play area
+        CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
+        Vector3 bottomLeft = controller.BottomLeftCorner;
+        Vector3 topRight = controller.TopRightCorner;
+
+        //sets up needed UI elements and calculations
+        sightCanvas = Instantiate(GameController.CanvasPrefab);
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, -.5f));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 sightIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
+
+        for(int i = (int)transform.position.x - visionRange; i <= transform.position.x + visionRange; i++)
+        {
+            for(int j = (int)transform.position.y - visionRange; j <= transform.position.y + visionRange; j++)
+            {
+                int x = i - (int)transform.position.x;
+                int y = j - (int)transform.position.y;
+                int r = (int)System.Math.Sqrt((x * x) + (y * y));
+                if(r <= visionRange && new Vector3(i, j) != transform.position)
+                {
+                    //calculate all relevant angles
+                    int theta = visionAngle / 2;
+                    int startAngle = currentFacingAngle - theta;
+                    int endAngle = currentFacingAngle + theta;
+                    double pointAngle = System.Math.Atan2(y, x) * (180 / System.Math.PI);
+                    //normalize angles to [0, 360]
+                    while(startAngle > 360) { startAngle -= 360; }
+                    while(startAngle < 0) { startAngle += 360; }
+                    while(endAngle > 360) { endAngle -= 360; }
+                    while(endAngle < 0) { endAngle += 360; }
+                    while(pointAngle > 360) { pointAngle -= 360; }
+                    while(pointAngle < 0) { pointAngle += 360; }
+                    //normalize angles to [0, 360] with startAngle = 0
+                    endAngle -= startAngle;
+                    pointAngle -= startAngle;
+                    startAngle = 0;
+                    if(endAngle < 0) { endAngle += 360; }
+                    if(pointAngle < 0) { pointAngle += 360; }
+
+
+                    Vector3 sightSquare = new Vector3(i, j);
+                    if (pointAngle >= startAngle && pointAngle <= endAngle && !Physics2D.Linecast(transform.position, sightSquare)
+                        && sightSquare.x >= bottomLeft.x && sightSquare.x <= topRight.x && sightSquare.y >= bottomLeft.y && sightSquare.y <= topRight.y)
+                    {
+                        sightConeIndicators[sightSquare] = Instantiate(GameController.SightSquarePrefab);
+                        sightConeIndicators[sightSquare].transform.SetParent(sightCanvas.transform);
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(sightSquare);
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = sightIndicatorDimensions;
+                    }
+                }
+            }
+        }
+    }
+
+    protected IEnumerator LookAround(int degrees)
+    {
+        isTurning = true;
+
+
+        int startAngle = currentFacingAngle;
+        int goalAngle = currentFacingAngle + degrees;
+
+        float t = 0;
+        float turnSpeed = .5f;
+        while(t < 1f)
+        {
+            t += Time.deltaTime * turnSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone();
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(.5f);
+
+        t = 0;
+        startAngle = currentFacingAngle;
+        goalAngle = currentFacingAngle - degrees * 2;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * turnSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone();
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(.5f);
+
+        t = 0;
+        startAngle = currentFacingAngle;
+        goalAngle = currentFacingAngle + degrees;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * turnSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone();
+            yield return null;
+        }
+
+
+
+        isTurning = false;
+    }
+
+    protected IEnumerator Turn(int targetDirection)
+    {
+        isTurning = true;
+
+        int startAngle = currentFacingAngle;
+        while (startAngle > 360) { startAngle -= 360; }
+        while (startAngle < 0) { startAngle += 360; }
+
+        int goalAngle = targetDirection;
+        int difference = goalAngle - startAngle;
+
+
+
+
+
+
+
+
+
+
+        if (difference < 0) { difference += 360; }
+
+        if(difference <=180)
+        {
+            //left
+            int degrees = goalAngle;
+            degrees -= startAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle + degrees;
+        }
+        else
+        {
+            //right
+            int degrees = startAngle;
+            degrees -= goalAngle;
+            if (degrees < 0) { degrees += 360; }
+
+
+
+            goalAngle = startAngle - degrees;
+        }
+
+        float t = 0;
+        float turnSpeed = 1.5f;
+        while(t < 1f)
+        {
+            t += Time.deltaTime * turnSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone();
+            yield return null;
+        }
+        currentFacingAngle = targetDirection;
+
+
+        isTurning = false;
+    }
+
+
+
+
+
+
+
+
+
 
 
     /// <summary>

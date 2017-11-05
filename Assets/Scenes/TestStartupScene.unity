@@ -221,3 +221,5 @@ MonoBehaviour:
     type: 2}
   attackSquare: {fileID: 1618723863189448, guid: 77d345428f98ce346b6ebea19e556c89,
     type: 2}
+  sightSquare: {fileID: 1310700567712018, guid: 6f9c22e8ea2e5c645a6ee3c888212380,
+    type: 2}

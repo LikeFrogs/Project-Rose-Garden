@@ -14281,6 +14281,8 @@ MonoBehaviour:
   - {x: 2, y: -2, z: 0}
   - {x: 4, y: -2, z: 0}
   - {x: 4, y: 0, z: 0}
+  visionRange: 5
+  currentFacingAngle: 0
 --- !u!212 &1017873029
 SpriteRenderer:
   m_ObjectHideFlags: 0
