@@ -49,6 +49,45 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// </summary>
     protected IEnumerator PlayScene(List<PlayableChar> party)
     {
+        List<CombatChar> charList = new List<CombatChar>();
+
+
+
+
+
+
+        //GameController gameController = Camera.main.GetComponent<GameController>();
+        if (party.Count != 0)
+        {
+            foreach (PlayableChar character in party)
+            {
+                charList.Add(character);
+            }
+        }
+
+
+
+
+
+        //adds enemies to charList
+        charList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<CombatChar>()).ToList());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //any dialogue and such before combat goes here
 
 
@@ -56,24 +95,14 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
 
 
 
-        //it would probably be a good idea to use LINQ statements here rather than a ton of foreach loops
-        List<CombatChar> charList = new List<CombatChar>();
 
-        //GameController gameController = Camera.main.GetComponent<GameController>();
+        
 
-        foreach (PlayableChar character in party)
-        {
-            charList.Add(character);
-        }
-
-        charList[0].transform.position = new Vector3(2, 2);
-        charList[1].transform.position = new Vector3(0, 0);
+        //charList[0].transform.position = new Vector3(2, 2);
+        //charList[1].transform.position = new Vector3(0, 0);
 
         //doing this would essentially remove the player from the scene -- useful for non combat scenes
         //charList[0].gameObject.SetActive(false);
-
-        //adds enemies to charList
-        charList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<CombatChar>()).ToList());
 
 
 
@@ -94,6 +123,9 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
         List<CombatChar> currentTurnBlock = new List<CombatChar>();
         List<CombatChar> nextList = new List<CombatChar>();
         nextList.AddRange(charList);
+
+
+        //*****************************************************************************Sorting
 
         //runs combat until the combat's objective is completed
         //could be kill all enemies or a battle specific objective

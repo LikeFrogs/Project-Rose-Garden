@@ -48,6 +48,10 @@ public abstract class CombatChar : MonoBehaviour
     /// </summary>
     public abstract int Resistance { get; }
     /// <summary>
+    /// Character's initiative. Used to determine turn order
+    /// </summary>
+    public abstract int Initiative { get; }
+    /// <summary>
     /// Gets character's attack range
     /// </summary>
     public abstract int AttackRange { get; }
@@ -61,12 +65,6 @@ public abstract class CombatChar : MonoBehaviour
     /// Gets true when taking damage and false otherwise
     /// </summary>
     public abstract bool TakingDamage { get; }
-
-
-
-    //calculates initiative for the character for the turn
-    //implemented differently in PCs and NPCs
-    public abstract int GetInitiative();
 
     /// <summary>
     /// Starts the coroutine that handles a character's turn

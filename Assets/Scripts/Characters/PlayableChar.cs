@@ -20,6 +20,7 @@ public abstract class PlayableChar : CombatChar
     protected int attack;
     protected int magicAttack;
     protected int defense;
+    protected int initiative;
     protected int resistance;
 
 
@@ -63,6 +64,13 @@ public abstract class PlayableChar : CombatChar
     /// Character's resistance. Used to defend against magical attacks
     /// </summary>
     public abstract override int Resistance { get; }
+    /// <summary>
+    /// Character's initiative. Used to determine turn order
+    /// </summary>
+    public override int Initiative
+    {
+        get { return initiative; }
+    }
     /// <summary>
     /// Gets character's attack range
     /// </summary>
@@ -353,18 +361,6 @@ public abstract class PlayableChar : CombatChar
         isMoving = false;
         waitingForAction = false;
         actionCompleted = false;
-    }
-
-    /// <summary>
-    /// Calculates the initiative of the character
-    /// </summary>
-    /// <returns>The calculated initiative value</returns>
-    public override int GetInitiative()
-    {
-        //do some stuff to get an initiative value
-
-        //testing value
-        return 1;
     }
 
     /// <summary>

@@ -84,6 +84,7 @@
     <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
     <Compile Include="Assets\Scripts\Characters\Node.cs" />
     <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
+    <Compile Include="Assets\Scripts\Characters\SearchZone.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />
     <Compile Include="Assets\Scripts\Item\Item.cs" />
     <Compile Include="Assets\Scripts\Item\MeleeWeapon.cs" />

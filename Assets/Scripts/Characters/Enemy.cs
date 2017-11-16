@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum EnemyStatus { Patrolling, Attacking, Hunting }
+public enum EnemyStatus { Patrolling, Searching, Attacking }
 
 /// <summary>
 /// NPC combat participants
@@ -14,12 +14,13 @@ public class Enemy : CombatChar
     [SerializeField] int maxHealth;
     protected int mutationPoints;
     [SerializeField] int maxMutationPoints;
-    [SerializeField] int speed;
-    protected int maxSpeed;
+    protected int speed;
+    [SerializeField] int maxSpeed;
     [SerializeField] int attack;
     [SerializeField] int magicAttack;
     [SerializeField] int defense;
     [SerializeField] int resistance;
+    [SerializeField] int initiative;
     [SerializeField] int attackRange;
 
     /// <summary>
@@ -93,6 +94,13 @@ public class Enemy : CombatChar
         get { return resistance; }
     }
     /// <summary>
+    /// Character's initiative. Used to determine turn order
+    /// </summary>
+    public override int Initiative
+    {
+        get { return initiative; }
+    }
+    /// <summary>
     /// Gets character's attack range
     /// </summary>
     public override int AttackRange
@@ -102,6 +110,29 @@ public class Enemy : CombatChar
     #endregion
 
     #region Fields and properties for game flow
+
+    SearchZone currentSearchArea;
+    List<List<Vector3>> positionsToSearch;
+    [SerializeField] List<GameObject> searchZoneList;
+    protected Dictionary<SearchZone, bool> searchZones;
+    protected List<Vector3> lastKnownPosition;
+
+
+
+
+
+
+
+
+    protected int speedRemaining;
+
+
+
+
+
+
+
+
     protected EnemyStatus status;
     [SerializeField] List<Vector3> patrolPositions;
     protected int patrolPositionIndex;
@@ -146,6 +177,28 @@ public class Enemy : CombatChar
     // Use this for initialization
     protected void Awake()
     {
+        searchZones = new Dictionary<SearchZone, bool>();
+        foreach(GameObject searchZone in searchZoneList)
+        {
+            searchZones[searchZone.GetComponent<SearchZone>()] = false;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //inherited control variables
         finishedTurn = true; //********************************************************************************************************************SET TO TRUE
         isTurning = false;
@@ -163,21 +216,12 @@ public class Enemy : CombatChar
         mutationPoints = maxMutationPoints;
         speed = maxSpeed;
 
-        status = EnemyStatus.Patrolling;
+        status = EnemyStatus.Searching;
         patrolPositionIndex = -1;
 
         //visionAngle = 90;
 
         sightConeIndicators = new Dictionary<Vector3, GameObject>();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (finishedTurn) //*******************************************************************************************************************REMOVE
-        {
-            StartCoroutine("Patrol");
-        }
     }
 
 
@@ -186,9 +230,14 @@ public class Enemy : CombatChar
     /// </summary>
     public override void BeginTurn()
     {
+        speedRemaining = speed;
+
         if (status == EnemyStatus.Patrolling)
         {
             StartCoroutine("Patrol");
+        }else if(status == EnemyStatus.Searching)
+        {
+            StartCoroutine("Search");
         }
     }
 
@@ -221,8 +270,129 @@ public class Enemy : CombatChar
                 StartCoroutine(Move(position));
                 //wait until finished moving
                 while (isMoving) { yield return null; }
-                //**************************************** Do any vision checks and reactions here after the enemy finishes its move to the next square *************************************************
             }
+        }
+
+
+        CalculateVisionCone();
+
+        //this will cause the turn manager to begin the next turn
+        finishedTurn = true;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    protected IEnumerator Search()
+    {
+        //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
+        finishedTurn = false;
+
+        CalculateVisionCone();
+
+
+        //determines the next area to search based on distance
+        if (currentSearchArea == null)
+        {
+            int shortestDistance = int.MaxValue;
+            foreach (KeyValuePair<SearchZone, bool> searchZone in searchZones)
+            {
+                int distance = Node.PathDistance(transform.position, searchZone.Key.transform.position);
+                if (searchZone.Value == false && distance <= shortestDistance)
+                {
+                    shortestDistance = distance;
+                    currentSearchArea = searchZone.Key;
+                }
+            }
+            positionsToSearch = currentSearchArea.KeyPositionLists;
+        }
+
+
+        //create a list of all reachable positions in the current search zone
+        List<Vector3> reachablePositions = new List<Vector3>();
+        for (int i = 0; i < positionsToSearch.Count; i++)
+        {
+            for (int j = 0; j < positionsToSearch[i].Count; j++)
+            {
+                if (Node.CheckSquare(transform.position, positionsToSearch[i][j], speed))
+                {
+                    reachablePositions.Add(positionsToSearch[i][j]);
+                }
+            }
+        }
+
+
+
+
+
+        if(reachablePositions.Count == 0)
+        {
+            reachablePositions.Add(currentSearchArea.transform.position);
+        }
+
+
+
+
+
+
+        //if the enemy can reach one of the positions that needs to be searched it will do so this turn
+        if (reachablePositions.Count > 0)
+        {
+            int index = (new System.Random()).Next(reachablePositions.Count);
+            List<Vector3> path = Node.FindPath(transform.position, reachablePositions[index]);
+
+            if (path != null)
+            {
+                foreach (Vector3 position in path)
+                {
+                    if (speedRemaining > 0)
+                    {
+                        StartCoroutine(Move(position));
+                        //wait until finished moving
+                        while (isMoving) { yield return null; }
+                        speedRemaining--;
+                    }
+                }
+            }
+
+
+
+
+
+            //for (int i = 0; i < path.Count; i++)
+            //{
+            //    if (speedRemaining > 0)
+            //    {
+            //        StartCoroutine(Move(path[i]));
+            //        //wait until finished moving
+            //        while (isMoving) { yield return null; }
+            //        speedRemaining--;
+            //    }
+            //}
+        }
+
+
+
+
+        //removes the list of positions that has been searched
+        for (int i = 0; i < positionsToSearch.Count; i++)
+        {
+            for (int j = 0; j < positionsToSearch[i].Count; j++)
+            {
+                if (positionsToSearch[i][j] == transform.position)
+                {
+                    positionsToSearch.Remove(positionsToSearch[i]);
+                    i = positionsToSearch.Count;
+                }
+            }
+        }
+
+
+        //resets the current search zone to null and checks off this search zone
+        if (positionsToSearch.Count == 0)
+        {
+            searchZones[currentSearchArea] = true;
+            currentSearchArea = null;
         }
 
 
@@ -345,6 +515,10 @@ public class Enemy : CombatChar
         }
     }
 
+    /// <summary>
+    /// Looks around by turning a set amount in both directions before returning to front-facing
+    /// </summary>
+    /// <param name="degrees">The amount to turn in each direction</param>
     protected IEnumerator LookAround(int degrees)
     {
         isTurning = true;
@@ -394,6 +568,10 @@ public class Enemy : CombatChar
         isTurning = false;
     }
 
+    /// <summary>
+    /// Turns to a specific angle
+    /// </summary>
+    /// <param name="targetDirection">The direction to turn to</param>
     protected IEnumerator Turn(int targetDirection)
     {
         isTurning = true;
@@ -450,29 +628,6 @@ public class Enemy : CombatChar
 
 
         isTurning = false;
-    }
-
-
-
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Calculates the initiative of the enemy
-    /// </summary>
-    /// <returns>The calculated initiative value</returns>
-    public override int GetInitiative()
-    {
-        //determine the enemy's initiative
-        //we could just do a set value per enemy
-
-        //for testing purposes returns 0 (1 less than playable characters)
-        return 0;
     }
 
     /// <summary>
