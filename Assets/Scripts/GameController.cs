@@ -143,10 +143,10 @@ public class GameController : MonoBehaviour
         //this is where character creation and such should be done
         party = new List<PlayableChar>();
 
-        party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
+        //party.Add(Instantiate(bluePlayer).GetComponent<PlayableChar>());
         //party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 3, 5, 15, 15, 2);
+        //party[0].GetComponent<PlayableChar>().Init(30, 3, 5, 15, 15, 2);
         //party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
 
         SceneManager.LoadScene("EnemyTest");

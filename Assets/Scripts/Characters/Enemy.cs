@@ -297,14 +297,14 @@ public class Enemy : CombatChar
             int shortestDistance = int.MaxValue;
             foreach (KeyValuePair<SearchZone, bool> searchZone in searchZones)
             {
-                int distance = Node.PathDistance(transform.position, searchZone.Key.transform.position);
-                if (searchZone.Value == false && distance <= shortestDistance)
+                int pathDistance = Node.PathDistance(transform.position, searchZone.Key.transform.position);
+                if (searchZone.Value == false && pathDistance <= shortestDistance)
                 {
-                    shortestDistance = distance;
+                    shortestDistance = pathDistance;
                     currentSearchArea = searchZone.Key;
                 }
             }
-            positionsToSearch = currentSearchArea.KeyPositionLists;
+            positionsToSearch = new List<List<Vector3>>(currentSearchArea.KeyPositionLists);
         }
 
 
@@ -324,10 +324,25 @@ public class Enemy : CombatChar
 
 
 
-
         if(reachablePositions.Count == 0)
         {
-            reachablePositions.Add(currentSearchArea.transform.position);
+            int index = 0;
+            int shortestDistance = int.MaxValue;
+
+            for (int i = 0; i < positionsToSearch.Count; i++)
+            {
+                for (int j = 0; j < positionsToSearch[i].Count; j++)
+                {
+                    int pathDistance = Node.PathDistance(transform.position, positionsToSearch[i][j]);
+                    if (pathDistance < shortestDistance)
+                    {
+                        shortestDistance = pathDistance;
+                        index = i;
+                    }
+                }
+            }
+
+            reachablePositions.AddRange(positionsToSearch[index]);
         }
 
 
@@ -354,21 +369,6 @@ public class Enemy : CombatChar
                     }
                 }
             }
-
-
-
-
-
-            //for (int i = 0; i < path.Count; i++)
-            //{
-            //    if (speedRemaining > 0)
-            //    {
-            //        StartCoroutine(Move(path[i]));
-            //        //wait until finished moving
-            //        while (isMoving) { yield return null; }
-            //        speedRemaining--;
-            //    }
-            //}
         }
 
 
@@ -377,12 +377,23 @@ public class Enemy : CombatChar
         //removes the list of positions that has been searched
         for (int i = 0; i < positionsToSearch.Count; i++)
         {
-            for (int j = 0; j < positionsToSearch[i].Count; j++)
+            //if (positionsToSearch[i].Contains(transform.position))
+            //{
+            //    positionsToSearch.Remove(positionsToSearch[i]);
+            //    i = positionsToSearch.Count;
+            //}
+
+
+            int numlists = positionsToSearch[i].Count;
+            for (int j = 0; j < numlists; j++)
             {
                 if (positionsToSearch[i][j] == transform.position)
                 {
                     positionsToSearch.Remove(positionsToSearch[i]);
-                    i = positionsToSearch.Count;
+                    j = numlists;
+
+                    StartCoroutine(LookAround(45));
+                    while (isTurning) { yield return null; }
                 }
             }
         }
@@ -395,6 +406,27 @@ public class Enemy : CombatChar
             currentSearchArea = null;
         }
 
+
+        if (!searchZones.ContainsValue(false))
+        {
+            List<SearchZone> zones = new List<SearchZone>(searchZones.Keys);
+            for(int i = 0; i < zones.Count; i++)
+            {
+                List<List<Vector3>> positionList = zones[i].KeyPositionLists;
+                for(int j = 0; j < positionList.Count; j++)
+                {
+                    if (positionList[j].Contains(transform.position))
+                    {
+                        searchZones[zones[i]] = true;
+                        j = positionList.Count;
+                    }
+                    else
+                    {
+                        searchZones[zones[i]] = false;
+                    }
+                }
+            }
+        }
 
         CalculateVisionCone();
 
@@ -528,7 +560,7 @@ public class Enemy : CombatChar
         int goalAngle = currentFacingAngle + degrees;
 
         float t = 0;
-        float turnSpeed = .5f;
+        float turnSpeed = 1.5f;
         while(t < 1f)
         {
             t += Time.deltaTime * turnSpeed;
@@ -657,8 +689,8 @@ public class Enemy : CombatChar
 
         if (health == 0)
         {
+            Destroy(sightCanvas);
             //run the death animation here
-
             Destroy(gameObject);
         }
 
