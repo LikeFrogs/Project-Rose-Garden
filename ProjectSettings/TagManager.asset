@@ -3,7 +3,14 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Blocking
+  - Enemy
+  - Interactable
+  - SceneController
+  - Canvas
+  - EventSystem
+  - SelectionIcon
   layers:
   - Default
   - TransparentFX
@@ -38,7 +45,7 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Front
+  - name: Back
     uniqueID: 4142872767
     locked: 0
   - name: Default

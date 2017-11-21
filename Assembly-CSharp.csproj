@@ -53,6 +53,8 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\Combat\CombatChar.cs" />
      <Compile Include="Assets\Scripts\Combat\Enemy.cs" />
+     <Compile Include="Assets\Scripts\Combat\InitializerAndTurnTest.cs" />
+     <Compile Include="Assets\Scripts\Combat\Node.cs" />
      <Compile Include="Assets\Scripts\Combat\PlayableChar.cs" />
      <Compile Include="Assets\Scripts\Combat\TurnHandler.cs" />
  <Reference Include="UnityEngine.UI">
