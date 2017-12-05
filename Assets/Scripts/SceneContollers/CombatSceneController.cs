@@ -11,6 +11,8 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     [SerializeField] Vector3 bottomLeftCorner;
     [SerializeField] Vector3 topRightCorner;
 
+    List<CombatChar> goodGuys;
+
     /// <summary>
     /// Gets the bottom left corner of the play area
     /// </summary>
@@ -19,6 +21,23 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// Gets the top right corner of the play area
     /// </summary>
     public Vector3 TopRightCorner { get { return topRightCorner; } }
+
+    /// <summary>
+    /// Gets the list of playable characters and allies
+    /// </summary>
+    public List<CombatChar> GoodGuys { get { return goodGuys; } }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Begins play
@@ -49,6 +68,18 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// </summary>
     protected IEnumerator PlayScene(List<PlayableChar> party)
     {
+        goodGuys = new List<CombatChar>();
+
+
+
+
+
+
+
+
+
+
+
         List<CombatChar> charList = new List<CombatChar>();
 
 
@@ -62,6 +93,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
             foreach (PlayableChar character in party)
             {
                 charList.Add(character);
+                goodGuys.Add(character);
             }
         }
 
@@ -70,7 +102,12 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
 
 
         //adds enemies to charList
-        charList.AddRange((from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<CombatChar>()).ToList());
+        List<Enemy> enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
+        foreach(Enemy enemy in enemies)
+        {
+            enemy.CreateTargetList(this);
+            charList.Add(enemy);
+        }
 
 
 
@@ -195,7 +232,10 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                 {
                     if (nextList[i] == null) { nextList.RemoveAt(i); }
                 }
-
+                for(int i = 0; i < goodGuys.Count; i++)
+                {
+                    if(goodGuys[i] == null) { goodGuys.RemoveAt(i); }
+                }
 
                 //checks for objective completion, special events, etc. here
             }

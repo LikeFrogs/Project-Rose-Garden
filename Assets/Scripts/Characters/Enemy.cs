@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public enum EnemyStatus { Patrolling, Searching, Attacking }
 
@@ -110,29 +111,23 @@ public class Enemy : CombatChar
     #endregion
 
     #region Fields and properties for game flow
+    protected List<CombatChar> enemies;
+    protected List<CombatChar> currentlySeenTargets;
+
+
+
+
+
+
+
+
 
     SearchZone currentSearchArea;
     List<List<Vector3>> positionsToSearch;
     [SerializeField] List<GameObject> searchZoneList;
     protected Dictionary<SearchZone, bool> searchZones;
     protected List<Vector3> lastKnownPosition;
-
-
-
-
-
-
-
-
     protected int speedRemaining;
-
-
-
-
-
-
-
-
     protected EnemyStatus status;
     [SerializeField] List<Vector3> patrolPositions;
     protected int patrolPositionIndex;
@@ -177,28 +172,27 @@ public class Enemy : CombatChar
     // Use this for initialization
     protected void Awake()
     {
+        currentlySeenTargets = new List<CombatChar>();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         searchZones = new Dictionary<SearchZone, bool>();
         foreach(GameObject searchZone in searchZoneList)
         {
             searchZones[searchZone.GetComponent<SearchZone>()] = false;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        
         //inherited control variables
         finishedTurn = true; //********************************************************************************************************************SET TO TRUE
         isTurning = false;
@@ -224,6 +218,13 @@ public class Enemy : CombatChar
         sightConeIndicators = new Dictionary<Vector3, GameObject>();
     }
 
+    public void CreateTargetList(CombatSceneController controller)
+    {
+        //stores the positions of the enemy's enemies
+        enemies = controller.GoodGuys;
+        //this is the first time before the scene fully starts that the enemy has enough information to calculate its vision cone
+        CalculateVisionCone();
+    }
 
     /// <summary>
     /// Starts the coroutine that handles a character's turn
@@ -281,7 +282,7 @@ public class Enemy : CombatChar
     }
 
     /// <summary>
-    /// 
+    /// Searches the area based on editor assigned search areas
     /// </summary>
     protected IEnumerator Search()
     {
@@ -545,7 +546,196 @@ public class Enemy : CombatChar
                 }
             }
         }
+
+        //removes null references from the dictionary
+        foreach (KeyValuePair<Vector3, GameObject> sightConeIndicator in sightConeIndicators.Where(Item => Item.Value == null).ToList())
+        {
+            sightConeIndicators.Remove(sightConeIndicator.Key);
+        }
+
+
+
+        for(int i = 0; i< currentlySeenTargets.Count; i++)
+        {
+            if (!sightConeIndicators.ContainsKey(currentlySeenTargets[i].transform.position))
+            {
+                currentlySeenTargets.Remove(currentlySeenTargets[i]);
+            }
+        }
+
+        //GameObject player = GameObject.FindGameObjectWithTag("Player");
+        //if (sightConeIndicators.ContainsKey(player.transform.position))
+        //{
+        //    StopAllCoroutines();
+        //    Debug.Log(";alkjf;aljf;l");
+        //    StartCoroutine("TestAThing");
+        //    //finishedTurn = true;
+        //}
+
+
+
+        if (!finishedTurn)
+        {
+            //get targets
+            List<CombatChar> seenTargets = new List<CombatChar>();
+            foreach (CombatChar target in enemies)
+            {
+                if (sightConeIndicators.ContainsKey(target.transform.position))
+                {
+                    seenTargets.Add(target);
+                }
+            }
+
+            seenTargets = (from CombatChar target in seenTargets where !currentlySeenTargets.Contains(target) select target).ToList();
+
+
+            currentlySeenTargets.AddRange(seenTargets);
+
+            //if the enemy sees a target, activate it's target sighted algorithm
+            if (seenTargets.Count > 0)
+            {
+                StopAllCoroutines();
+                StartCoroutine(TargetSighted());
+            }
+        }
     }
+
+    private IEnumerator TestAThing()
+    {
+        sightConeIndicators.Clear();
+
+        transform.position = new Vector3(0, 10, 0);
+
+        List<Vector3> path = Node.FindPath(transform.position, new Vector3(2, 0));
+        foreach (Vector3 position in path)
+        {
+            StartCoroutine(Move(position));
+            while (isMoving) { yield return null; }
+        }
+
+        Debug.Log("oooooookay");
+
+        finishedTurn = true;
+
+        yield break;
+    }
+
+
+
+
+
+
+
+
+
+
+    protected IEnumerator TargetSighted()
+    {
+        //end other turn-related events
+        //StopAllCoroutines();
+
+
+        ////////////targets[0].BeginTakeDamage(100);
+        ////////////finishedTurn = true;
+        ////////////yield break;
+
+
+        //List<Vector3> path = Node.FindPath(transform.position, new Vector3(targets[0].transform.position.x + 1, targets[0].transform.position.y));
+        //foreach(Vector3 position in path)
+        //{
+        //    StartCoroutine(Move(position));
+        //    while (isMoving) { yield return null; }
+        //}
+
+
+        //StartCoroutine(Move(new Vector3(transform.position.x + 1, transform.position.y)));
+
+
+        //finishedTurn = true;
+        //yield break;
+
+
+        List<CombatChar> reachableTargets = new List<CombatChar>();
+        foreach (CombatChar target in currentlySeenTargets)
+        {
+            if (Node.PathDistance(transform.position, target.transform.position) <= attackRange)
+            {
+                reachableTargets.Add(target);
+            }
+        }
+
+        if (reachableTargets.Count > 0)
+        {
+            //***********************************************************************analyze targets in someway
+            CombatChar target = reachableTargets[0];
+
+
+            //calculates damage to apply and calls TakeDamage()
+            //int damage = attack + attack - target.Defense;
+            target.BeginTakeDamage(100);
+            while (target.TakingDamage) { yield return null; }
+
+            yield return null;
+            while (currentlySeenTargets.Contains(null))
+            {
+                currentlySeenTargets.Remove(null);
+            }
+            Debug.Log("should be removed now");
+        }
+        else
+        {
+            //**********************************************************************analyze targets in someway
+            CombatChar target = currentlySeenTargets[0];
+
+            Vector3 targetPos = new Vector3();
+            int shortestDistance = int.MaxValue;
+            for (int x = (int)target.transform.position.x - attackRange; x <= (int)target.transform.position.x + attackRange; x++)
+            {
+                for (int y = (int)target.transform.position.y - (attackRange - System.Math.Abs((int)target.transform.position.x - x)); System.Math.Abs((int)target.transform.position.x - x) + System.Math.Abs((int)target.transform.position.y - y) <= attackRange; y++)
+                {
+                    Vector3 testPos = new Vector3(x, y);
+                    int pathDistance = Node.PathDistance(transform.position, testPos);
+                    if (pathDistance <= shortestDistance && pathDistance <= speedRemaining)
+                    {
+                        shortestDistance = pathDistance;
+                        targetPos = testPos;
+                    }
+                }
+            }
+
+
+
+            List<Vector3> path = Node.FindPath(transform.position, targetPos);
+            if (path != null)
+            {
+                foreach (Vector3 position in path)
+                {
+                    if (speedRemaining > 0)
+                    {
+                        StartCoroutine(Move(position));
+                        //wait until finished moving
+                        while (isMoving) { yield return null; }
+                        speedRemaining--;
+                    }
+                }
+            }
+        }
+
+
+        finishedTurn = true;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Looks around by turning a set amount in both directions before returning to front-facing
