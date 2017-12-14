@@ -28691,7 +28691,7 @@ MonoBehaviour:
   defense: 5
   resistance: 5
   initiative: 0
-  attackRange: 6
+  attackRange: 1
   searchZoneList:
   - {fileID: 767104656}
   - {fileID: 169659990}

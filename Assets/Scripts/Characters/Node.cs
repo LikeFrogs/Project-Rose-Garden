@@ -143,22 +143,26 @@ public class Node
             //adds Nodes to the open list for all positions that are unblocked and have not already been added to the list
             //any Nodes that are added to the open list have their positions added to blockedList so they can't be readded in the future
             Vector3 currentPos = closedList[closedList.Count - 1].Position;
-            if (!blockedList.Contains(new Vector3(currentPos.x - 1, currentPos.y)) && (new Vector3(currentPos.x - 1, currentPos.y)).x >= bottomLeft.x)
+            Vector3 leftOne = new Vector3(currentPos.x - 1, currentPos.y);
+            if (!blockedList.Contains(leftOne) && (leftOne.x >= bottomLeft.x) && (leftOne.x >= startPos.x - speed))
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x - 1, currentPos.y), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x - 1, currentPos.y));
             }
-            if (!blockedList.Contains(new Vector3(currentPos.x + 1, currentPos.y)) && (new Vector3(currentPos.x + 1, currentPos.y)).x <= topRight.x)
+            Vector3 rightOne = new Vector3(currentPos.x + 1, currentPos.y);
+            if (!blockedList.Contains(rightOne) && (rightOne.x <= topRight.x) && (rightOne.x <= startPos.x + speed))
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x + 1, currentPos.y), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x + 1, currentPos.y));
             }
-            if (!blockedList.Contains(new Vector3(currentPos.x, currentPos.y - 1)) && (new Vector3(currentPos.x, currentPos.y - 1)).y >= bottomLeft.y)
+            Vector3 downOne = new Vector3(currentPos.x, currentPos.y - 1);
+            if (!blockedList.Contains(downOne) && (downOne.y >= bottomLeft.y) && (downOne.y >= startPos.y - speed))
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x, currentPos.y - 1), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x, currentPos.y - 1));
             }
-            if (!blockedList.Contains(new Vector3(currentPos.x, currentPos.y + 1)) && (new Vector3(currentPos.x, currentPos.y + 1)).y <= topRight.y)
+            Vector3 upOne = new Vector3(currentPos.x, currentPos.y + 1);
+            if (!blockedList.Contains(upOne) && (upOne.y <= topRight.y) && (upOne.y <= startPos.y + speed))
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x, currentPos.y + 1), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x, currentPos.y + 1));
@@ -189,7 +193,6 @@ public class Node
             return false;
         }
     }
-
 
     /// <summary>
     /// Finds and a path. Note that this method is only intended for use by the Enemy class. Also note that it does not take into account the positions
@@ -279,25 +282,6 @@ public class Node
         return finalPath;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// <summary>
     /// Determines the number of moves it would take to move from one square to another. Note that this method is only intended for use by the Enemy class. Also note that it does not take into account the positions
     /// of players and will return a path as if there are no obstructions. In this method endPos is assumed to be reachable from startPos in the scene's base state
@@ -377,12 +361,13 @@ public class Node
             path.Add(path[path.Count - 1].Parent);
         }
 
-        //creates a list of vector 3's going from startPos to endPos along the shortest path and returns it
+        //creates a list of vector 3's going from startPos to endPos along the shortest path
         List<Vector3> finalPath = new List<Vector3>();
         for (int i = path.Count - 1; i >= 0; i--)
         {
             finalPath.Add(path[i].pos);
         }
+        //return the length of the final path
         return finalPath.Count;
     }
 

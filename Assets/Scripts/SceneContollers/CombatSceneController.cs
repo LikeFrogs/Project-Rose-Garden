@@ -220,22 +220,29 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                 currentTurnBlock.RemoveAt(index);
 
                 //checks for and removes all destroyed characaters
-                for (int i = 0; i < finishedList.Count; i++)
-                {
-                    if (finishedList[i] == null) { finishedList.RemoveAt(i); }
-                }
-                for (int i = 0; i < currentTurnBlock.Count; i++)
-                {
-                    if (currentTurnBlock[i] == null) { currentTurnBlock.RemoveAt(i); }
-                }
-                for (int i = 0; i < nextList.Count; i++)
-                {
-                    if (nextList[i] == null) { nextList.RemoveAt(i); }
-                }
-                for(int i = 0; i < goodGuys.Count; i++)
-                {
-                    if(goodGuys[i] == null) { goodGuys.RemoveAt(i); }
-                }
+                //for (int i = 0; i < finishedList.Count; i++)
+                //{
+                //    if (finishedList[i] == null) { finishedList.RemoveAt(i); }
+                //}
+                //for (int i = 0; i < currentTurnBlock.Count; i++)
+                //{
+                //    if (currentTurnBlock[i] == null) { currentTurnBlock.RemoveAt(i); }
+                //}
+                //for (int i = 0; i < nextList.Count; i++)
+                //{
+                //    if (nextList[i] == null) { nextList.RemoveAt(i); }
+                //}
+                //for(int i = 0; i < goodGuys.Count; i++)
+                //{
+                //    if(goodGuys[i] == null) { goodGuys.RemoveAt(i); }
+                //}
+
+
+
+                while (finishedList.Contains(null)) { finishedList.Remove(null); }
+                while (currentTurnBlock.Contains(null)) { currentTurnBlock.Remove(null); }
+                while (nextList.Contains(null)) { nextList.Remove(null); }
+                while (goodGuys.Contains(null)) { goodGuys.Remove(null); }
 
                 //checks for objective completion, special events, etc. here
             }

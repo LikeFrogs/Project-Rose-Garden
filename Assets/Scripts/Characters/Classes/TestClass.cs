@@ -118,7 +118,7 @@ public class TestClass : PlayableChar
 
 
 
-    private void Start()
+    private void Awake()
     {
         abilityList = new List<string>();
         spellList = new List<string>();

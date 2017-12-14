@@ -78,6 +78,32 @@ public abstract class PlayableChar : CombatChar
     #endregion
 
     #region Fields and properties for game flow
+    List<GameObject> unusedMoveRangeIndicators;
+    List<GameObject> unusedRangeIndicators;
+    Dictionary<Vector3, GameObject> moveRangeIndicators;
+    Dictionary<Vector3, GameObject> attackRangeIndicators;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     protected bool finishedTurn;
     protected bool takingDamage;
 
@@ -88,7 +114,7 @@ public abstract class PlayableChar : CombatChar
     protected List<Vector3> moveRange;
     protected bool actionCompleted;
     protected GameObject UICanvas;
-    protected GameObject MovementCanvas;
+    protected Canvas MovementCanvas;
     protected bool waitingForAction;
 
     /// <summary>
@@ -120,10 +146,43 @@ public abstract class PlayableChar : CombatChar
     #endregion
 
 
-    // Use this for initialization
-    //all ints are default testing values for the moment
-    protected void Awake()
+    //// Use this for initialization
+    ////all ints are default testing values for the moment
+    //protected void Awake()
+    //{
+    //    //the playable party will always transfer between scenes
+    //    DontDestroyOnLoad(transform);
+
+    //    //control variables with properties
+    //    finishedTurn = false;
+    //    takingDamage = false;
+
+    //    //local control variables
+    //    startingPosition = new Vector3();
+    //    movePhase = false;
+    //    isMoving = false;
+    //    moveRange = new List<Vector3>();
+    //    actionCompleted = false;
+    //    UICanvas = null;
+    //    waitingForAction = false;
+    //}
+
+    /// <summary>
+    /// Sets up the stats of this character. Should only be called at character creation.
+    /// </summary>
+    public void Init(int maxHealth, int maxSpeed, int attack, int magicAttack, int defense, int resistance)
     {
+        this.health = maxHealth;
+        this.maxHealth = maxHealth;
+        this.speed = maxSpeed;
+        this.maxSpeed = maxSpeed;
+        this.attack = attack;
+        this.magicAttack = magicAttack;
+        this.defense = defense;
+        this.resistance = resistance;
+
+
+
         //the playable party will always transfer between scenes
         DontDestroyOnLoad(transform);
 
@@ -139,21 +198,42 @@ public abstract class PlayableChar : CombatChar
         actionCompleted = false;
         UICanvas = null;
         waitingForAction = false;
-    }
 
-    /// <summary>
-    /// Sets up the stats of this character. Should only be called at character creation.
-    /// </summary>
-    public void Init(int maxHealth, int maxSpeed, int attack, int magicAttack, int defense, int resistance)
-    {
-        this.health = maxHealth;
-        this.maxHealth = maxHealth;
-        this.speed = maxSpeed;
-        this.maxSpeed = maxSpeed;
-        this.attack = attack;
-        this.magicAttack = magicAttack;
-        this.defense = defense;
-        this.resistance = resistance;
+
+
+
+        MovementCanvas = gameObject.GetComponentInChildren<Canvas>();
+        moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        attackRangeIndicators = new Dictionary<Vector3, GameObject>();
+        unusedMoveRangeIndicators = new List<GameObject>();
+        unusedRangeIndicators = new List<GameObject>();
+
+
+
+
+        for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
+        {
+            for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
+            {
+                GameObject indicator = Instantiate(GameController.MoveRangeSprite);
+                indicator.SetActive(false);
+                indicator.transform.SetParent(MovementCanvas.transform);
+
+
+                unusedMoveRangeIndicators.Add(indicator);
+            }
+        }
+
+        for(int i = 0; i < unusedMoveRangeIndicators.Count; i++)
+        {
+            GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
+            indicator.SetActive(false);
+            indicator.transform.SetParent(MovementCanvas.transform);
+
+
+            unusedRangeIndicators.Add(indicator);
+        }
+        //Debug.Log(unusedMoveRangeIndicators.Count + "");
     }
 
     // Update is called once per frame
@@ -245,18 +325,15 @@ public abstract class PlayableChar : CombatChar
 
         //environmental effects
 
-        //if health == 0 {yield break;}
-        //finishedTurn = true;
-        //put this check anywhere it would be possible for the character to take damage
 
         #region movement calculations
         //UI object set up
-        MovementCanvas = Instantiate(GameController.CanvasPrefab);
+        //////////////////////////////////////////////////////////////////////////////////////////////MovementCanvas = Instantiate(GameController.CanvasPrefab);
         Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, - .5f));
         Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
         Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
-        Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        Dictionary<Vector3, GameObject> attackRangeIndicators = new Dictionary<Vector3, GameObject>();
+        //Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        //Dictionary<Vector3, GameObject> attackRangeIndicators = new Dictionary<Vector3, GameObject>();
 
 
         //moveRange must be recalculated on every turn
@@ -273,7 +350,11 @@ public abstract class PlayableChar : CombatChar
                 {
                     moveRange.Add(testMov);
                     //creates UI for this square
-                    moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    //moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
+                    unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
+                    moveRangeIndicators[testMov].SetActive(true);
+
                     moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
@@ -282,8 +363,16 @@ public abstract class PlayableChar : CombatChar
                 {
                     moveRange.Add(testMov);
                     //creates UI for this square
+                    //moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    GameObject indicator = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
+                    unusedMoveRangeIndicators.Remove(indicator);
+                    indicator.SetActive(true);
+                    moveRangeIndicators[testMov] = indicator;
 
-                    moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
+                    //moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
+                    //moveRangeIndicators[testMov].SetActive(true);
+                    //unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
+
                     moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
@@ -306,8 +395,23 @@ public abstract class PlayableChar : CombatChar
                     //if the target square can be seen from (x, y) and does not already have an indicator it is added to attackRangeIndicatorLocations
                     if (!Physics2D.Linecast(moveRangeIndicator.Key, testAtk) && !moveRangeIndicators.ContainsKey(testAtk) && !attackRangeIndicators.ContainsKey(testAtk))
                     {
+                        if(unusedRangeIndicators.Count == 0)
+                        {
+                            GameObject newIndicator = Instantiate(GameController.AttackSquarePrefab);
+                            newIndicator.SetActive(false);
+                            newIndicator.transform.SetParent(MovementCanvas.transform);
+
+
+                            unusedRangeIndicators.Add(newIndicator);
+                        }
+
                         //creates UI for this square
-                        attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
+                        GameObject indicator = unusedRangeIndicators[unusedRangeIndicators.Count - 1];
+                        unusedRangeIndicators.Remove(indicator);
+                        indicator.SetActive(true);
+                        attackRangeIndicators[testAtk] = indicator;
+
+                        //attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
                         attackRangeIndicators[testAtk].transform.SetParent(MovementCanvas.transform);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
@@ -354,7 +458,31 @@ public abstract class PlayableChar : CombatChar
     {
         //destroy any UI this turn created
         Destroy(UICanvas);
-        Destroy(MovementCanvas);
+        //Destroy(MovementCanvas);
+        List<GameObject> indicators = moveRangeIndicators.Values.ToList();
+        for(int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            unusedMoveRangeIndicators.Add(indicators[i]);
+        }
+        moveRangeIndicators.Clear();
+
+        indicators = attackRangeIndicators.Values.ToList();
+        for(int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            unusedRangeIndicators.Add(indicators[i]);
+        }
+        attackRangeIndicators.Clear();
+
+
+        //destroy no longer relevant UI
+        foreach (GameObject oldIndicator in GameObject.FindGameObjectsWithTag("SelectionIcon")) //destroys old targettable ui
+        {
+            Destroy(oldIndicator);
+        }
+
+
 
         //reset all variables for next turn
         movePhase = false;

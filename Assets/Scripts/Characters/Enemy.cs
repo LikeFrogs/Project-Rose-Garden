@@ -737,20 +737,6 @@ public class Enemy : CombatChar
             foreach(KeyValuePair<Vector3, GameObject> sightSquare 
                 in sightConeIndicators.Where(Item => (System.Math.Abs((int)Item.Key.x - (int)target.transform.position.x) + System.Math.Abs((int)Item.Key.y - (int)target.transform.position.y)) <= attackRange).ToList())
             {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 int pathDistance = Node.PathDistance(transform.position, sightSquare.Key);
                 if(pathDistance <= shortestDistance)
                 {
@@ -758,14 +744,6 @@ public class Enemy : CombatChar
                     targetPos = sightSquare.Key;
                 }
             }
-
-
-
-
-
-            sw.Stop();
-            double milliseconds = sw.ElapsedMilliseconds;
-            UnityEngine.Debug.Log(milliseconds + "");
 
 
 
@@ -811,6 +789,7 @@ public class Enemy : CombatChar
                     }
                 }
             }
+            yield return null;
         }
         
         if(currentlySeenTargets.Count == 0)
@@ -1035,7 +1014,7 @@ public class Enemy : CombatChar
 
 
             currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
-            CalculateVisionCone(true);
+            CalculateVisionCone2(transform.position);
 
 
             transform.position = Vector3.Lerp(startPos, endPos, t);
@@ -1048,10 +1027,21 @@ public class Enemy : CombatChar
 
             yield return null;
         }
+
+
+        //t = 0;
+        //float turnSpeed = 1.5f;
+        //while (t < 1f)
+        //{
+        //    t += Time.deltaTime * turnSpeed;
+        //    currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+        //    CalculateVisionCone();
+        //    yield return null;
+        //}
         currentFacingAngle = targetDirection;
 
 
-
+        yield return null;
         
 
 
@@ -1066,7 +1056,69 @@ public class Enemy : CombatChar
 
 
 
+    protected void CalculateVisionCone2(Vector3 origin)
+    {
+        Destroy(sightCanvas);
 
+        //determines the bounds of the play area
+        CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
+        Vector3 bottomLeft = controller.BottomLeftCorner;
+        Vector3 topRight = controller.TopRightCorner;
+
+        //sets up needed UI elements and calculations
+        sightCanvas = Instantiate(GameController.CanvasPrefab);
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, -.5f));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 sightIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
+
+        for (int i = (int)origin.x - visionRange; i <= origin.x + visionRange; i++)
+        {
+            for (int j = (int)origin.y - visionRange; j <= origin.y + visionRange; j++)
+            {
+                int x = i - (int)origin.x;
+                int y = j - (int)origin.y;
+                int r = (int)System.Math.Sqrt((x * x) + (y * y));
+                if (r <= visionRange && new Vector3(i, j) != origin)
+                {
+                    //calculate all relevant angles
+                    int theta = visionAngle / 2;
+                    int startAngle = currentFacingAngle - theta;
+                    int endAngle = currentFacingAngle + theta;
+                    double pointAngle = System.Math.Atan2(y, x) * (180 / System.Math.PI);
+                    //normalize angles to [0, 360]
+                    while (startAngle > 360) { startAngle -= 360; }
+                    while (startAngle < 0) { startAngle += 360; }
+                    while (endAngle > 360) { endAngle -= 360; }
+                    while (endAngle < 0) { endAngle += 360; }
+                    while (pointAngle > 360) { pointAngle -= 360; }
+                    while (pointAngle < 0) { pointAngle += 360; }
+                    //normalize angles to [0, 360] with startAngle = 0
+                    endAngle -= startAngle;
+                    pointAngle -= startAngle;
+                    startAngle = 0;
+                    if (endAngle < 0) { endAngle += 360; }
+                    if (pointAngle < 0) { pointAngle += 360; }
+
+
+                    Vector3 sightSquare = new Vector3(i, j);
+                    if (pointAngle >= startAngle && pointAngle <= endAngle && !Physics2D.Linecast(origin, sightSquare)
+                        && sightSquare.x >= bottomLeft.x && sightSquare.x <= topRight.x && sightSquare.y >= bottomLeft.y && sightSquare.y <= topRight.y)
+                    {
+                        sightConeIndicators[sightSquare] = Instantiate(GameController.SightSquarePrefab);
+                        sightConeIndicators[sightSquare].transform.SetParent(sightCanvas.transform);
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(sightSquare);
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = sightIndicatorDimensions;
+                    }
+                }
+            }
+        }
+
+        //removes null references from the dictionary
+        foreach (KeyValuePair<Vector3, GameObject> sightConeIndicator in sightConeIndicators.Where(Item => Item.Value == null).ToList())
+        {
+            sightConeIndicators.Remove(sightConeIndicator.Key);
+        }
+    }
 
 
 
