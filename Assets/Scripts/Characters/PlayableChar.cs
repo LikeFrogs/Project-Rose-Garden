@@ -78,10 +78,18 @@ public abstract class PlayableChar : CombatChar
     #endregion
 
     #region Fields and properties for game flow
-    List<GameObject> unusedMoveRangeIndicators;
-    List<GameObject> unusedRangeIndicators;
-    Dictionary<Vector3, GameObject> moveRangeIndicators;
-    Dictionary<Vector3, GameObject> attackRangeIndicators;
+    protected List<GameObject> unusedActionButtons;
+    protected Dictionary<Vector2, GameObject> actionButtons;
+
+    protected List<GameObject> unusedTargetIcons;
+    protected Dictionary<Vector3, GameObject> targetIcons;
+
+
+
+    private List<GameObject> unusedMoveRangeIndicators;
+    private List<GameObject> unusedRangeIndicators;
+    private Dictionary<Vector3, GameObject> moveRangeIndicators;
+    private Dictionary<Vector3, GameObject> attackRangeIndicators;
 
 
 
@@ -113,8 +121,9 @@ public abstract class PlayableChar : CombatChar
     protected bool isMoving;
     protected List<Vector3> moveRange;
     protected bool actionCompleted;
-    protected GameObject UICanvas;
-    protected Canvas MovementCanvas;
+    //********************************************************************************************************I only need one canvas
+    //protected GameObject UICanvas;
+    protected Canvas canvas;
     protected bool waitingForAction;
 
     /// <summary>
@@ -181,8 +190,6 @@ public abstract class PlayableChar : CombatChar
         this.defense = defense;
         this.resistance = resistance;
 
-
-
         //the playable party will always transfer between scenes
         DontDestroyOnLoad(transform);
 
@@ -196,44 +203,64 @@ public abstract class PlayableChar : CombatChar
         isMoving = false;
         moveRange = new List<Vector3>();
         actionCompleted = false;
-        UICanvas = null;
         waitingForAction = false;
 
+        //sets up the canvases and object pools for UI elements
+        canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
 
-
-
-        MovementCanvas = gameObject.GetComponentInChildren<Canvas>();
         moveRangeIndicators = new Dictionary<Vector3, GameObject>();
         attackRangeIndicators = new Dictionary<Vector3, GameObject>();
         unusedMoveRangeIndicators = new List<GameObject>();
         unusedRangeIndicators = new List<GameObject>();
 
+        actionButtons = new Dictionary<Vector2, GameObject>();
+        unusedActionButtons = new List<GameObject>();
 
+        targetIcons = new Dictionary<Vector3, GameObject>();
+        unusedTargetIcons = new List<GameObject>();
 
-
+        //instantiates the initial pool of UI objects
+        //movement range sprites
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
         {
             for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
             {
                 GameObject indicator = Instantiate(GameController.MoveRangeSprite);
                 indicator.SetActive(false);
-                indicator.transform.SetParent(MovementCanvas.transform);
+                indicator.transform.SetParent(canvas.transform);
 
 
                 unusedMoveRangeIndicators.Add(indicator);
             }
         }
-
+        //attack range sprites
         for(int i = 0; i < unusedMoveRangeIndicators.Count; i++)
         {
             GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
             indicator.SetActive(false);
-            indicator.transform.SetParent(MovementCanvas.transform);
+            indicator.transform.SetParent(canvas.transform);
 
 
             unusedRangeIndicators.Add(indicator);
         }
-        //Debug.Log(unusedMoveRangeIndicators.Count + "");
+        //action buttons
+        for(int i = 0; i < 15; i++)
+        {
+            GameObject button = Instantiate(GameController.ButtonPrefab);
+            button.SetActive(false);
+            button.transform.SetParent(canvas.transform);
+
+            unusedActionButtons.Add(button);
+        }
+        //target icons
+        for(int i = 0; i < 10; i++)
+        {
+            GameObject indicator = Instantiate(GameController.SelectionPrefab);
+            indicator.SetActive(false);
+            indicator.transform.SetParent(canvas.transform);
+
+            unusedTargetIcons.Add(indicator);
+        }
     }
 
     // Update is called once per frame
@@ -269,7 +296,12 @@ public abstract class PlayableChar : CombatChar
             //if (Input.GetKeyDown(KeyCode.Escape))
             if (Input.GetButtonDown("Cancel"))
             {
-                Destroy(UICanvas);
+                //Destroy(UICanvas);
+
+
+                //deactivate action buttons
+                ResetActionButtons();
+
 
                 movePhase = true;
                 waitingForAction = false;
@@ -323,17 +355,14 @@ public abstract class PlayableChar : CombatChar
         finishedTurn = false;
         startingPosition = transform.position;
 
-        //environmental effects
+        //*********************************************************************************************environmental effects
 
 
         #region movement calculations
         //UI object set up
-        //////////////////////////////////////////////////////////////////////////////////////////////MovementCanvas = Instantiate(GameController.CanvasPrefab);
         Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, - .5f));
         Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
         Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
-        //Dictionary<Vector3, GameObject> moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        //Dictionary<Vector3, GameObject> attackRangeIndicators = new Dictionary<Vector3, GameObject>();
 
 
         //moveRange must be recalculated on every turn
@@ -350,12 +379,10 @@ public abstract class PlayableChar : CombatChar
                 {
                     moveRange.Add(testMov);
                     //creates UI for this square
-                    //moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
                     moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
                     unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
                     moveRangeIndicators[testMov].SetActive(true);
 
-                    moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
@@ -363,17 +390,10 @@ public abstract class PlayableChar : CombatChar
                 {
                     moveRange.Add(testMov);
                     //creates UI for this square
-                    //moveRangeIndicators[testMov] = Instantiate(GameController.MoveRangeSprite);
-                    GameObject indicator = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
-                    unusedMoveRangeIndicators.Remove(indicator);
-                    indicator.SetActive(true);
-                    moveRangeIndicators[testMov] = indicator;
+                    moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
+                    unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
+                    moveRangeIndicators[testMov].SetActive(true);
 
-                    //moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
-                    //moveRangeIndicators[testMov].SetActive(true);
-                    //unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
-
-                    moveRangeIndicators[testMov].transform.SetParent(MovementCanvas.transform);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
                     moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
                 }
@@ -399,8 +419,7 @@ public abstract class PlayableChar : CombatChar
                         {
                             GameObject newIndicator = Instantiate(GameController.AttackSquarePrefab);
                             newIndicator.SetActive(false);
-                            newIndicator.transform.SetParent(MovementCanvas.transform);
-
+                            newIndicator.transform.SetParent(canvas.transform);
 
                             unusedRangeIndicators.Add(newIndicator);
                         }
@@ -412,7 +431,7 @@ public abstract class PlayableChar : CombatChar
                         attackRangeIndicators[testAtk] = indicator;
 
                         //attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
-                        attackRangeIndicators[testAtk].transform.SetParent(MovementCanvas.transform);
+                        attackRangeIndicators[testAtk].transform.SetParent(canvas.transform);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
 
@@ -422,18 +441,6 @@ public abstract class PlayableChar : CombatChar
         }
 
         DrawTargets();
-
-        //List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= AttackRange select enemy).ToList();
-        //foreach (GameObject enemy in enemyList)
-        //{
-        //    if (!Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), enemy.transform.position))
-        //    {
-        //        GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
-        //        newIndicator.transform.SetParent(MovementCanvas.transform);
-        //        newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
-        //    }
-        //}
-
 
         //turns on player movement
         movePhase = true;
@@ -456,9 +463,8 @@ public abstract class PlayableChar : CombatChar
     /// </summary>
     private void ResetTurnVariables()
     {
-        //destroy any UI this turn created
-        Destroy(UICanvas);
-        //Destroy(MovementCanvas);
+        //disable current UI elements and return them to the object pools
+        //move range indicators
         List<GameObject> indicators = moveRangeIndicators.Values.ToList();
         for(int i = 0; i < indicators.Count; i++)
         {
@@ -466,7 +472,7 @@ public abstract class PlayableChar : CombatChar
             unusedMoveRangeIndicators.Add(indicators[i]);
         }
         moveRangeIndicators.Clear();
-
+        //attack range indicators
         indicators = attackRangeIndicators.Values.ToList();
         for(int i = 0; i < indicators.Count; i++)
         {
@@ -474,21 +480,45 @@ public abstract class PlayableChar : CombatChar
             unusedRangeIndicators.Add(indicators[i]);
         }
         attackRangeIndicators.Clear();
-
-
-        //destroy no longer relevant UI
-        foreach (GameObject oldIndicator in GameObject.FindGameObjectsWithTag("SelectionIcon")) //destroys old targettable ui
-        {
-            Destroy(oldIndicator);
-        }
-
-
+        //action buttons
+        ResetActionButtons();
+        //target icons
+        ResetTargetIcons();
 
         //reset all variables for next turn
         movePhase = false;
         isMoving = false;
         waitingForAction = false;
         actionCompleted = false;
+    }
+
+    /// <summary>
+    /// Removes action buttons from the screen
+    /// </summary>
+    protected void ResetActionButtons()
+    {
+        List<GameObject> buttons = actionButtons.Values.ToList();
+        for (int i = 0; i < buttons.Count; i++)
+        {
+            buttons[i].GetComponent<Button>().onClick.RemoveAllListeners();
+            buttons[i].SetActive(false);
+            unusedActionButtons.Add(buttons[i]);
+        }
+        actionButtons.Clear();
+    }
+
+    /// <summary>
+    /// Removes target icons from the screen
+    /// </summary>
+    protected void ResetTargetIcons()
+    {
+        List<GameObject> icons = targetIcons.Values.ToList();
+        for (int i = 0; i < icons.Count; i++)
+        {
+            icons[i].SetActive(false);
+            unusedTargetIcons.Add(icons[i]);
+        }
+        targetIcons.Clear();
     }
 
     /// <summary>
@@ -513,7 +543,7 @@ public abstract class PlayableChar : CombatChar
         health -= damage;
         if (health < 0) { health = 0; }
 
-        //play the taking damage animation here and make sure it takes the correct amount of time
+        //***********************************************************************play the taking damage animation here and make sure it takes the correct amount of time
         //yield return null;
 
         if (health == 0)
@@ -578,27 +608,24 @@ public abstract class PlayableChar : CombatChar
     /// </summary>
     protected void ActionMenu()
     {
-        //instantiates a canvas to display the action menu on
-        UICanvas = Instantiate(GameController.CanvasPrefab);
-        //Canvas canvas = (Canvas)UICanvas.GetComponent("Canvas");
-
         //create buttons based on possible actions
         List<string> menuList = GetActions();
         List<GameObject> buttonList = new List<GameObject>();
         for (int i = 0; i < menuList.Count; i++)
         {
-            //instantiate button, change text to correct menu option and connect button to method of the same name
-            GameObject button = Instantiate(GameController.ButtonPrefab);
-            button.transform.SetParent(UICanvas.transform);
-            button.GetComponentInChildren<Text>().text = menuList[i];
-            string word = menuList[i];
-            button.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(word));
-            //position the button next to this character
+            //set up each button appropriately
             Vector2 buttonPosition = Camera.main.WorldToScreenPoint(new Vector3(transform.position.x + .5f, transform.position.y));
-            button.GetComponent<RectTransform>().anchoredPosition = new Vector2(buttonPosition.x, buttonPosition.y - (30 * i));
+            buttonPosition.y = buttonPosition.y - (30 * i);
+            actionButtons[buttonPosition] = unusedActionButtons[unusedActionButtons.Count - 1];
+            unusedActionButtons.RemoveAt(unusedActionButtons.Count - 1);
+            actionButtons[buttonPosition].SetActive(true);
+            actionButtons[buttonPosition].GetComponentInChildren<Text>().text = menuList[i];
+            string word = menuList[i];
+            actionButtons[buttonPosition].GetComponent<Button>().onClick.AddListener(() => StartCoroutine(word));
+            actionButtons[buttonPosition].GetComponent<RectTransform>().anchoredPosition = buttonPosition;
+            actionButtons[buttonPosition].GetComponent<RectTransform>().SetAsLastSibling();
 
-
-            buttonList.Add(button);
+            buttonList.Add(actionButtons[buttonPosition]);
         }
 
         //select the first button to enable keyboard/gamepad control

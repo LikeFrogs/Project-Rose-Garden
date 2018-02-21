@@ -134,10 +134,7 @@ public class TestClass : PlayableChar
     protected override void DrawTargets()
     {
         //destroy no longer relevant UI
-        foreach (GameObject oldIndicator in GameObject.FindGameObjectsWithTag("SelectionIcon")) //destroys old targettable ui
-        {
-            Destroy(oldIndicator);
-        }
+        ResetTargetIcons();
 
         //dont draw targets if out of ammo
         if (rangedWeapon.Ammo <= 0) { return; }
@@ -150,9 +147,10 @@ public class TestClass : PlayableChar
         {
             if (!Physics2D.Linecast(transform.position, enemy.transform.position))
             {
-                GameObject newIndicator = Instantiate(GameController.SelectionPrefab);
-                newIndicator.transform.SetParent(MovementCanvas.transform);
-                newIndicator.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
+                targetIcons[enemy.transform.position] = unusedTargetIcons[unusedTargetIcons.Count - 1];
+                unusedTargetIcons.RemoveAt(unusedTargetIcons.Count - 1);
+                targetIcons[enemy.transform.position].SetActive(true);
+                targetIcons[enemy.transform.position].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
             }
         }
 
@@ -214,7 +212,7 @@ public class TestClass : PlayableChar
         return actionList;
     }
 
-
+    //dmage calculation is off
     /// <summary>
     /// Allows the character to make a melee attack
     /// </summary>
@@ -223,10 +221,8 @@ public class TestClass : PlayableChar
         waitingForAction = false; //this variable refers only to the main action menu
 
         #region UI set-up
-        //removes the action menu before bringing up the next one
-        Destroy(UICanvas);
-        //instantiates a canvas to display the action menu on
-        UICanvas = Instantiate(GameController.CanvasPrefab);
+        //deactivate action buttons
+        ResetActionButtons();
         //creates a list of Vector3's with attackable targets
         List<Vector3> adjacentSquares = new List<Vector3>
         {
@@ -237,25 +233,17 @@ public class TestClass : PlayableChar
         };
         //creates a list of possible targets and a dictionary to hold the UI target icons based on their position
         List<Vector3> targets = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where adjacentSquares.Contains(gameObject.transform.position) select gameObject.transform.position).ToList();
-        Dictionary<Vector3, GameObject> targetIcons = new Dictionary<Vector3, GameObject>();
-        foreach (Vector3 targetPos in targets)
-        {
-            targetIcons.Add(targetPos, null);
-        }
-        //creates UI for targetting
-        for (int i = 0; i < targets.Count; i++)
-        {
-            targetIcons[targets[i]] = Instantiate(GameController.SelectionPrefab);
-            targetIcons[targets[i]].transform.SetParent(UICanvas.transform);
-            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(targets[i]);
-        }
+        GameObject selectedIcon = Instantiate(GameController.SelectedPrefab);
+        selectedIcon.transform.SetParent(canvas.transform);
+        selectedIcon.SetActive(false);
+
         //changes the icon on the first target "selection icon" to a "selected icon"
         int targetIndex = 0;
         Vector3 selectedPosition = targets[targetIndex];
-        Destroy(targetIcons[selectedPosition]);
-        targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-        targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+        targetIcons[selectedPosition].SetActive(false);
+        selectedIcon.SetActive(true);
+        selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+
         #endregion
 
         //waits while the user is selecting a target
@@ -280,17 +268,11 @@ public class TestClass : PlayableChar
             //redraws the UI if the selected enemy changes
             if (lastSelectedPosition != selectedPosition)
             {
-                //canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
                 //sets the previously selected square to have selection UI
-                Destroy(targetIcons[lastSelectedPosition]);
-                targetIcons[lastSelectedPosition] = Instantiate(GameController.SelectionPrefab);
-                targetIcons[lastSelectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
+                targetIcons[lastSelectedPosition].SetActive(true);
+
                 //sets the newly selected square to have selected UI
-                Destroy(targetIcons[selectedPosition]);
-                targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-                targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+                selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
             }
 
             //confirms attack target
@@ -298,15 +280,20 @@ public class TestClass : PlayableChar
             //returns to the previous action menu
             if (Input.GetButtonDown("Cancel"))
             {
-                Destroy(UICanvas);
+                //reset UI to pre-targetting phase
+                ResetTargetIcons();
+                Destroy(selectedIcon);
+                DrawTargets();
+
+                //bring up the action menu again
                 ActionMenu();
                 yield break;
             }
         }
 
         //removes UI as attack goes through
-        Destroy(UICanvas);
-        Destroy(MovementCanvas);
+        ResetTargetIcons();
+        Destroy(selectedIcon);
 
         //gets the enemy whose position matches the currently selected square
         CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
@@ -315,7 +302,6 @@ public class TestClass : PlayableChar
         int damage = attack + meleeWeapon.Damage - target.Defense;
         target.BeginTakeDamage(damage);
         while (target.TakingDamage) { yield return null; }
-
 
         //allows TakeTurn to finish
         actionCompleted = true;
@@ -331,30 +317,20 @@ public class TestClass : PlayableChar
 
         #region UI set-up
         //removes the action menu before bringing up the next one
-        Destroy(UICanvas);
-        //instantiates a canvas to display the action menu on
-        UICanvas = Instantiate(GameController.CanvasPrefab);
+        ResetActionButtons();
+
         //creates a list of possible targets and a dictionary to hold the UI target icons based on their position
         List<Vector3> targets = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= AttackRange select enemy.transform.position).ToList();
-        Dictionary<Vector3, GameObject> targetIcons = new Dictionary<Vector3, GameObject>();
-        foreach (Vector3 targetPos in targets)
-        {
-            targetIcons.Add(targetPos, null);
-        }
-        //creates UI for targetting
-        for (int i = 0; i < targets.Count; i++)
-        {
-            targetIcons[targets[i]] = Instantiate(GameController.SelectionPrefab);
-            targetIcons[targets[i]].transform.SetParent(UICanvas.transform);
-            targetIcons[targets[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(targets[i]);
-        }
+        GameObject selectedIcon = Instantiate(GameController.SelectedPrefab);
+        selectedIcon.transform.SetParent(canvas.transform);
+        selectedIcon.SetActive(false);
+
         //changes the icon on the first target "selection icon" to a "selected icon"
         int targetIndex = 0;
         Vector3 selectedPosition = targets[targetIndex];
-        Destroy(targetIcons[selectedPosition]);
-        targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-        targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-        targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+        targetIcons[selectedPosition].SetActive(false);
+        selectedIcon.SetActive(true);
+        selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
         #endregion
 
         //waits while the user is selecting a target
@@ -379,17 +355,11 @@ public class TestClass : PlayableChar
             //redraws the UI if the selected enemy changes
             if (lastSelectedPosition != selectedPosition)
             {
-                //canvas.worldCamera = null; //camera must be removed and reassigned for new UI to render correctly
                 //sets the previously selected square to have selection UI
-                Destroy(targetIcons[lastSelectedPosition]);
-                targetIcons[lastSelectedPosition] = Instantiate(GameController.SelectionPrefab);
-                targetIcons[lastSelectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[lastSelectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(lastSelectedPosition);
+                targetIcons[lastSelectedPosition].SetActive(true);
+
                 //sets the newly selected square to have selected UI
-                Destroy(targetIcons[selectedPosition]);
-                targetIcons[selectedPosition] = Instantiate(GameController.SelectedPrefab);
-                targetIcons[selectedPosition].transform.SetParent(UICanvas.transform);
-                targetIcons[selectedPosition].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+                selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
             }
 
             //confirms attack target
@@ -397,15 +367,20 @@ public class TestClass : PlayableChar
             //returns to the previous action menu
             if (Input.GetButtonDown("Cancel"))
             {
-                Destroy(UICanvas);
+                //reset UI to pre-targetting phase
+                ResetTargetIcons();
+                Destroy(selectedIcon);
+                DrawTargets();
+
+                //bring up the action menu again
                 ActionMenu();
                 yield break;
             }
         }
 
         //removes UI as attack goes through
-        Destroy(UICanvas);
-        Destroy(MovementCanvas);
+        ResetTargetIcons();
+        Destroy(selectedIcon);
 
         //gets the enemy whose position matches the currently selected square
         CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
@@ -415,7 +390,6 @@ public class TestClass : PlayableChar
         rangedWeapon.Ammo -= 1;
         target.BeginTakeDamage(damage);
         while (target.TakingDamage) { yield return null; }
-
 
         //allows TakeTurn to finish
         actionCompleted = true;
