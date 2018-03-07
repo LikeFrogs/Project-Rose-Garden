@@ -82,7 +82,9 @@
     <Compile Include="Assets\Scripts\Characters\Classes\TestClass.cs" />
     <Compile Include="Assets\Scripts\Characters\CombatChar.cs" />
     <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
-    <Compile Include="Assets\Scripts\Characters\Node.cs" />
+    <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraNode.cs" />
+    <Compile Include="Assets\Scripts\Characters\Pathfinding\Node.cs" />
+    <Compile Include="Assets\Scripts\Characters\Pathfinding\PriorityQueue.cs" />
     <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
     <Compile Include="Assets\Scripts\Characters\SearchZone.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />

@@ -143,7 +143,7 @@ public class GameController : MonoBehaviour
         //this is where character creation and such should be done
         party = new List<PlayableChar>();
 
-        party.Add(Instantiate(bluePlayer/*, new Vector3(26, 3), Quaternion.identity*/).GetComponent<PlayableChar>());
+        party.Add(Instantiate(bluePlayer, new Vector3(26, 3), Quaternion.identity).GetComponent<PlayableChar>());
         //party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
         party[0].GetComponent<PlayableChar>().Init(30, 8, 5, 15, 15, 2);
@@ -160,6 +160,7 @@ public class GameController : MonoBehaviour
         {
             sceneLoaded = false;
             SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
+            for(int i = 0; i < party.Count; i++) { party[i].OnSceneLoad(); }
             controller.StartScene(party);
         }
 	}

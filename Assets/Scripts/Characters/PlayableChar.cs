@@ -206,7 +206,7 @@ public abstract class PlayableChar : CombatChar
         waitingForAction = false;
 
         //sets up the canvases and object pools for UI elements
-        canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
+        //canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
 
         moveRangeIndicators = new Dictionary<Vector3, GameObject>();
         attackRangeIndicators = new Dictionary<Vector3, GameObject>();
@@ -227,10 +227,11 @@ public abstract class PlayableChar : CombatChar
             {
                 GameObject indicator = Instantiate(GameController.MoveRangeSprite);
                 indicator.SetActive(false);
-                indicator.transform.SetParent(canvas.transform);
+                //indicator.transform.SetParent(canvas.transform);
 
 
                 unusedMoveRangeIndicators.Add(indicator);
+                DontDestroyOnLoad(indicator);
             }
         }
         //attack range sprites
@@ -238,29 +239,63 @@ public abstract class PlayableChar : CombatChar
         {
             GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
             indicator.SetActive(false);
-            indicator.transform.SetParent(canvas.transform);
+            //indicator.transform.SetParent(canvas.transform);
 
 
             unusedRangeIndicators.Add(indicator);
+            DontDestroyOnLoad(indicator);
         }
         //action buttons
-        for(int i = 0; i < 15; i++)
+        for (int i = 0; i < 15; i++)
         {
             GameObject button = Instantiate(GameController.ButtonPrefab);
             button.SetActive(false);
-            button.transform.SetParent(canvas.transform);
+            //button.transform.SetParent(canvas.transform);
 
             unusedActionButtons.Add(button);
+            DontDestroyOnLoad(button);
         }
         //target icons
-        for(int i = 0; i < 10; i++)
+        for (int i = 0; i < 10; i++)
         {
             GameObject indicator = Instantiate(GameController.SelectionPrefab);
             indicator.SetActive(false);
-            indicator.transform.SetParent(canvas.transform);
+            //indicator.transform.SetParent(canvas.transform);
 
             unusedTargetIcons.Add(indicator);
+            DontDestroyOnLoad(indicator);
         }
+    }
+
+    public void OnSceneLoad()
+    {
+        canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
+
+        List<GameObject> indicators = unusedActionButtons;
+        for (int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            indicators[i].transform.SetParent(canvas.transform);
+        }
+        indicators = unusedMoveRangeIndicators;
+        for (int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            indicators[i].transform.SetParent(canvas.transform);
+        }
+        indicators = unusedRangeIndicators;
+        for (int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            indicators[i].transform.SetParent(canvas.transform);
+        }
+        indicators = unusedTargetIcons;
+        for (int i = 0; i < indicators.Count; i++)
+        {
+            indicators[i].SetActive(false);
+            indicators[i].transform.SetParent(canvas.transform);
+        }
+
     }
 
     // Update is called once per frame
@@ -549,7 +584,7 @@ public abstract class PlayableChar : CombatChar
         if (health == 0)
         {
             //run the death animation here
-
+            
             Destroy(gameObject);
         }
 

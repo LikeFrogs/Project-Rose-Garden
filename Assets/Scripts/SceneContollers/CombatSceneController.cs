@@ -243,6 +243,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                 while (currentTurnBlock.Contains(null)) { currentTurnBlock.Remove(null); }
                 while (nextList.Contains(null)) { nextList.Remove(null); }
                 while (goodGuys.Contains(null)) { goodGuys.Remove(null); }
+                yield return null;
 
                 //checks for objective completion, special events, etc. here
             }

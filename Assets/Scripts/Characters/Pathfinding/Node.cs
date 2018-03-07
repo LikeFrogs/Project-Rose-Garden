@@ -82,6 +82,19 @@ public class Node
     }
     #endregion
 
+
+
+
+
+
+
+    
+
+
+
+
+
+
     /// <summary>
     /// Determines if a character with a certain speed can reach endPos when starting from startPos
     /// </summary>
