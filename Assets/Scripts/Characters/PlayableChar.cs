@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
 
+public enum PlayerStatus {MovePhase, Moving, ActionMenu, Finished }
+
 /// <summary>
 /// A playable character
 /// </summary>
@@ -78,53 +80,27 @@ public abstract class PlayableChar : CombatChar
     #endregion
 
     #region Fields and properties for game flow
+    protected PlayerStatus status;
+
+    protected List<Vector3> takenPath;
+
+    //character-personal UI elements
     protected List<GameObject> unusedActionButtons;
     protected Dictionary<Vector2, GameObject> actionButtons;
-
     protected List<GameObject> unusedTargetIcons;
     protected Dictionary<Vector3, GameObject> targetIcons;
-
-
-
     private List<GameObject> unusedMoveRangeIndicators;
     private List<GameObject> unusedRangeIndicators;
     private Dictionary<Vector3, GameObject> moveRangeIndicators;
     private Dictionary<Vector3, GameObject> attackRangeIndicators;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     protected bool finishedTurn;
     protected bool takingDamage;
 
     //these all store either data that tells this class when to perform certain actions or objects that need to be accessed from more than one method
     protected Vector3 startingPosition;
-    protected bool movePhase;
-    protected bool isMoving;
     protected List<Vector3> moveRange;
-    protected bool actionCompleted;
-    //********************************************************************************************************I only need one canvas
-    //protected GameObject UICanvas;
     protected Canvas canvas;
-    protected bool waitingForAction;
 
     /// <summary>
     /// This bool will be set to true at the end of a character's turn.
@@ -154,28 +130,6 @@ public abstract class PlayableChar : CombatChar
     }
     #endregion
 
-
-    //// Use this for initialization
-    ////all ints are default testing values for the moment
-    //protected void Awake()
-    //{
-    //    //the playable party will always transfer between scenes
-    //    DontDestroyOnLoad(transform);
-
-    //    //control variables with properties
-    //    finishedTurn = false;
-    //    takingDamage = false;
-
-    //    //local control variables
-    //    startingPosition = new Vector3();
-    //    movePhase = false;
-    //    isMoving = false;
-    //    moveRange = new List<Vector3>();
-    //    actionCompleted = false;
-    //    UICanvas = null;
-    //    waitingForAction = false;
-    //}
-
     /// <summary>
     /// Sets up the stats of this character. Should only be called at character creation.
     /// </summary>
@@ -198,28 +152,19 @@ public abstract class PlayableChar : CombatChar
         takingDamage = false;
 
         //local control variables
+        takenPath = new List<Vector3>();
         startingPosition = new Vector3();
-        movePhase = false;
-        isMoving = false;
         moveRange = new List<Vector3>();
-        actionCompleted = false;
-        waitingForAction = false;
 
-        //sets up the canvases and object pools for UI elements
-        //canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
-
+        //UI object pooling set up
         moveRangeIndicators = new Dictionary<Vector3, GameObject>();
         attackRangeIndicators = new Dictionary<Vector3, GameObject>();
         unusedMoveRangeIndicators = new List<GameObject>();
         unusedRangeIndicators = new List<GameObject>();
-
         actionButtons = new Dictionary<Vector2, GameObject>();
         unusedActionButtons = new List<GameObject>();
-
         targetIcons = new Dictionary<Vector3, GameObject>();
         unusedTargetIcons = new List<GameObject>();
-
-        //instantiates the initial pool of UI objects
         //movement range sprites
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
         {
@@ -227,8 +172,6 @@ public abstract class PlayableChar : CombatChar
             {
                 GameObject indicator = Instantiate(GameController.MoveRangeSprite);
                 indicator.SetActive(false);
-                //indicator.transform.SetParent(canvas.transform);
-
 
                 unusedMoveRangeIndicators.Add(indicator);
                 DontDestroyOnLoad(indicator);
@@ -239,8 +182,6 @@ public abstract class PlayableChar : CombatChar
         {
             GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
             indicator.SetActive(false);
-            //indicator.transform.SetParent(canvas.transform);
-
 
             unusedRangeIndicators.Add(indicator);
             DontDestroyOnLoad(indicator);
@@ -250,7 +191,6 @@ public abstract class PlayableChar : CombatChar
         {
             GameObject button = Instantiate(GameController.ButtonPrefab);
             button.SetActive(false);
-            //button.transform.SetParent(canvas.transform);
 
             unusedActionButtons.Add(button);
             DontDestroyOnLoad(button);
@@ -260,13 +200,15 @@ public abstract class PlayableChar : CombatChar
         {
             GameObject indicator = Instantiate(GameController.SelectionPrefab);
             indicator.SetActive(false);
-            //indicator.transform.SetParent(canvas.transform);
 
             unusedTargetIcons.Add(indicator);
             DontDestroyOnLoad(indicator);
         }
     }
 
+    /// <summary>
+    /// Links this character to scene's canvas
+    /// </summary>
     public void OnSceneLoad()
     {
         canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
@@ -301,74 +243,64 @@ public abstract class PlayableChar : CombatChar
     // Update is called once per frame
     void Update()
     {
-        //looks for input to bring up the action menu
-        if (movePhase)
+        //***********************************************************TEMP
+        if (takenPath.Count > 0)
         {
-            if (!isMoving)
-            {
-                //used to prevent the character from ending their turn in another character's space
-                List<Vector3> playerList = new List<Vector3>();
-                GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
-                for (int i = 0; i < playerObjects.Length; i++)
-                {
-                    playerList.Add(playerObjects[i].transform.position);
-                }
-                playerList.Remove(transform.position); //the character's own square should not be restricted
+            Debug.DrawLine(startingPosition, takenPath[0]);
 
-                //input for action menu
-                if (Input.GetButtonDown("Submit") && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
-                {
-                    //character can't move while the menu is up
-                    movePhase = false;
-                    ActionMenu();
-                }
+            for (int i = 1; i < takenPath.Count; i++)
+            {
+                Debug.DrawLine(takenPath[i - 1], takenPath[i]);
             }
         }
 
-        //allows the user to back out of the action menu and move again
-        if (waitingForAction)
+
+        //looks for input to bring up the action menu
+        if (status == PlayerStatus.MovePhase)
         {
-            //if (Input.GetKeyDown(KeyCode.Escape))
-            if (Input.GetButtonDown("Cancel"))
+            //used to prevent the character from ending their turn in another character's space
+            List<Vector3> playerList = new List<Vector3>();
+            GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
+            for (int i = 0; i < playerObjects.Length; i++)
             {
-                //Destroy(UICanvas);
+                playerList.Add(playerObjects[i].transform.position);
+            }
+            playerList.Remove(transform.position); //the character's own square should not be restricted
 
-
-                //deactivate action buttons
-                ResetActionButtons();
-
-
-                movePhase = true;
-                waitingForAction = false;
+            //input for action menu
+            if (Input.GetButtonDown("Submit") && !playerList.Contains(transform.position)) //add additional checks to make sure character is not in a space it can't end in
+            {
+                //character can't move while the menu is up
+                //movePhase = false;
+                status = PlayerStatus.ActionMenu;
+                //ActionMenu();
+                StartCoroutine("ActionMenu");
             }
         }
 
         //if it is still the move phase after the action menu checks then check for movment input
-        if (movePhase)
+        if (status == PlayerStatus.MovePhase)
         {
-            if (!isMoving)
+            //when the player is not actively moving looks for input in x and y directions and calls the move coroutine
+            Vector2 input;
+
+            //gets input for movement
+            input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+
+            //the following code disables diagonal movement
+            //if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+            //{
+            //    input.y = 0;
+            //}
+            //else
+            //{
+            //    input.x = 0;
+            //}
+
+            //if there was input begin moving
+            if (input != Vector2.zero)
             {
-                //when the player is not actively moving looks for input in x and y directions and calls the move coroutine
-                Vector2 input;
-
-                //gets input for movement
-                input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-
-                //the following code disables diagonal movement
-                //if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
-                //{
-                //    input.y = 0;
-                //}
-                //else
-                //{
-                //    input.x = 0;
-                //}
-
-                //if there was input begin moving
-                if (input != Vector2.zero)
-                {
-                    StartCoroutine(Move(input));
-                }
+                StartCoroutine(Move(input));
             }
         }
     }
@@ -388,51 +320,59 @@ public abstract class PlayableChar : CombatChar
     {
         //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
         finishedTurn = false;
+
+        //keep up with character's movement
         startingPosition = transform.position;
+        takenPath.Clear();
+
 
         //*********************************************************************************************environmental effects
 
 
-        #region movement calculations
+        CalculateRanges();
+
+        DrawTargets();
+
+        //turns on player movement
+        status = PlayerStatus.MovePhase;
+
+        //pause the turn flow while the user is navigating action menus
+        while(status != PlayerStatus.Finished) { yield return null; }
+
+        //sets this character back to the state it should be in for its next turn
+        ResetTurnVariables();
+
+        //this will cause the turn manager to begin the next turn
+        finishedTurn = true;
+    }
+
+    /// <summary>
+    /// Calculates movement and attack ranges
+    /// </summary>
+    private void CalculateRanges()
+    {
+        //calculate move range
+        float[,] moveCosts = CombatSceneController.MoveCosts;
+        List<Enemy> enemies = CombatSceneController.Enemies;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+        }
+        moveRange.Clear();
+        moveRange.AddRange(DijkstraNode.MoveRange(transform.position, speed, moveCosts));
+
         //UI object set up
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, - .5f));
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, -.5f));
         Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
         Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
-
-
-        //moveRange must be recalculated on every turn
-        moveRange.Clear();
-
-        //this for loop runs the inner functions on every square that would be within a character's unimpeded movement range
-        for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
+        for (int i = 0; i < moveRange.Count; i++)
         {
-            for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
-            {
-                //determines if the square can actually be reached and if so adds it to moveRange
-                Vector3 testMov = new Vector3(x, y);
-                if (testMov == transform.position)
-                {
-                    moveRange.Add(testMov);
-                    //creates UI for this square
-                    moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
-                    unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
-                    moveRangeIndicators[testMov].SetActive(true);
+            moveRangeIndicators[moveRange[i]] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
+            unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
+            moveRangeIndicators[moveRange[i]].SetActive(true);
 
-                    moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
-                    moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
-                }
-                else if (Node.CheckSquare(transform.position, testMov, speed))
-                {
-                    moveRange.Add(testMov);
-                    //creates UI for this square
-                    moveRangeIndicators[testMov] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
-                    unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
-                    moveRangeIndicators[testMov].SetActive(true);
-
-                    moveRangeIndicators[testMov].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testMov);
-                    moveRangeIndicators[testMov].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
-                }
-            }
+            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(moveRange[i]);
+            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
         }
 
         //for every reachable square the entire attack range is checked for line of sight
@@ -450,7 +390,7 @@ public abstract class PlayableChar : CombatChar
                     //if the target square can be seen from (x, y) and does not already have an indicator it is added to attackRangeIndicatorLocations
                     if (!Physics2D.Linecast(moveRangeIndicator.Key, testAtk) && !moveRangeIndicators.ContainsKey(testAtk) && !attackRangeIndicators.ContainsKey(testAtk))
                     {
-                        if(unusedRangeIndicators.Count == 0)
+                        if (unusedRangeIndicators.Count == 0)
                         {
                             GameObject newIndicator = Instantiate(GameController.AttackSquarePrefab);
                             newIndicator.SetActive(false);
@@ -465,7 +405,6 @@ public abstract class PlayableChar : CombatChar
                         indicator.SetActive(true);
                         attackRangeIndicators[testAtk] = indicator;
 
-                        //attackRangeIndicators[testAtk] = Instantiate(GameController.AttackSquarePrefab);
                         attackRangeIndicators[testAtk].transform.SetParent(canvas.transform);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
                         attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
@@ -474,25 +413,8 @@ public abstract class PlayableChar : CombatChar
                 }
             }
         }
-
-        DrawTargets();
-
-        //turns on player movement
-        movePhase = true;
-        #endregion
-
-        //pause the turn flow while the user is navigating action menus
-        //bringing up the action menu is handled in Update()
-        actionCompleted = false;
-        while (!actionCompleted) { yield return null; }
-
-        //sets this character back to the state it should be in for its next turn
-        ResetTurnVariables();
-
-        //this will cause the turn manager to begin the next turn
-        finishedTurn = true;
     }
-
+    
     /// <summary>
     /// Sets all game flow variables to the state they should be in at the start and end of a turn
     /// </summary>
@@ -520,11 +442,9 @@ public abstract class PlayableChar : CombatChar
         //target icons
         ResetTargetIcons();
 
-        //reset all variables for next turn
-        movePhase = false;
-        isMoving = false;
-        waitingForAction = false;
-        actionCompleted = false;
+        //notify any subscribers of the path taken to the character's current position
+        NotifyOfMove(takenPath);
+        takenPath.Clear();
     }
 
     /// <summary>
@@ -584,7 +504,6 @@ public abstract class PlayableChar : CombatChar
         if (health == 0)
         {
             //run the death animation here
-            
             Destroy(gameObject);
         }
 
@@ -600,7 +519,9 @@ public abstract class PlayableChar : CombatChar
     /// <param name="input">The target position to move to</param>
     private IEnumerator Move(Vector2 input)
     {
-        isMoving = true; //while running this routine no new input is accepted
+        //while running this routine no new input is accepted
+        status = PlayerStatus.Moving;
+
         Vector3 startPos = transform.position;
         float t = 0; //time
         //this vector equals the player's original position + 1 in the direction they are moving
@@ -629,8 +550,34 @@ public abstract class PlayableChar : CombatChar
         //highlights all enemies targetable from this space
         DrawTargets();
 
+        //keeps track of the character's movement
+        if (transform.position == endPos)
+        {
+            takenPath.AddRange(Node.FindPath(startPos, endPos));
+            //takenPath.Add(endPos);
+            if (takenPath.Count > speed)
+            {
+                takenPath = Node.FindPath(startingPosition, endPos);
+            }
+        }
+        //if(endPos == startingPosition)
+        //{
+        //    takenPath.Clear();
+        //}
+
+        //**************************************************************Update this to actual graphical drawing of the path (this is currently in update because Debug)
+        //if (takenPath.Count > 0)
+        //{
+        //    Debug.DrawLine(startingPosition, takenPath[0]);
+
+        //    for(int i = 1; i < takenPath.Count; i++)
+        //    {
+        //        Debug.DrawLine(takenPath[i - 1], takenPath[i]);
+        //    }
+        //}
+
         //when done moving allow more input to be received
-        isMoving = false;
+        status = PlayerStatus.MovePhase;
     }
 
     /// <summary>
@@ -641,8 +588,10 @@ public abstract class PlayableChar : CombatChar
     /// <summary>
     /// Instantiates UI buttons for all possible actions
     /// </summary>
-    protected void ActionMenu()
+    protected IEnumerator ActionMenu()
     {
+        status = PlayerStatus.ActionMenu;
+
         //create buttons based on possible actions
         List<string> menuList = GetActions();
         List<GameObject> buttonList = new List<GameObject>();
@@ -664,11 +613,23 @@ public abstract class PlayableChar : CombatChar
         }
 
         //select the first button to enable keyboard/gamepad control
-        GameObject eventSystem = GameObject.FindGameObjectWithTag("EventSystem");
-        eventSystem.GetComponent<EventSystem>().SetSelectedGameObject(buttonList[0]);
+        EventSystem.current.SetSelectedGameObject(null);
+        EventSystem.current.SetSelectedGameObject(buttonList[0]);
 
-        //turns on the ability to back out of the action menu
-        waitingForAction = true;
+        while (true)
+        {
+            yield return null;
+
+            if (Input.GetButtonDown("Submit")) { break; }
+            if (Input.GetButtonDown("Cancel"))
+            {
+                ResetActionButtons();
+
+                status = PlayerStatus.MovePhase;
+
+                break;
+            }
+        }
     }
 
     /// <summary>
@@ -682,7 +643,7 @@ public abstract class PlayableChar : CombatChar
     /// </summary>
     private IEnumerator End()
     {
-        actionCompleted = true;
+        status = PlayerStatus.Finished;
         yield break;
     }
 

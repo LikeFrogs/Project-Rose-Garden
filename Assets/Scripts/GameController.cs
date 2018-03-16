@@ -86,25 +86,6 @@ public class GameController : MonoBehaviour
     private bool sceneLoaded;
     //holds the playable party members between scenes
     private List<PlayableChar> party;
-    //holds the next unused ID for character ID tagging for targets
-    private static int nextID;
-    #endregion
-
-    #region Properties
-    /// <summary>
-    /// holds the next unused ID for character ID tagging for targets
-    /// </summary>
-    public static int NextID
-    {
-        get { return nextID; }
-        set
-        {
-            if(value > nextID)
-            {
-                nextID = value;
-            }
-        }
-    }
     #endregion
 
     #region Party inventory
@@ -143,13 +124,13 @@ public class GameController : MonoBehaviour
         //this is where character creation and such should be done
         party = new List<PlayableChar>();
 
-        party.Add(Instantiate(bluePlayer, new Vector3(26, 3), Quaternion.identity).GetComponent<PlayableChar>());
+        party.Add(Instantiate(bluePlayer, new Vector3(10, 5), Quaternion.identity).GetComponent<PlayableChar>());
         //party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
 
         party[0].GetComponent<PlayableChar>().Init(30, 8, 5, 15, 15, 2);
         //party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
 
-        SceneManager.LoadScene("EnemyTest");
+        SceneManager.LoadScene("DijkstraTest");
     }
 
 	// Update is called once per frame

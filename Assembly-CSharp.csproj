@@ -51,12 +51,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\Combat\CombatChar.cs" />
-     <Compile Include="Assets\Scripts\Combat\Enemy.cs" />
-     <Compile Include="Assets\Scripts\Combat\InitializerAndTurnTest.cs" />
-     <Compile Include="Assets\Scripts\Combat\Node.cs" />
-     <Compile Include="Assets\Scripts\Combat\PlayableChar.cs" />
-     <Compile Include="Assets\Scripts\Combat\TurnHandler.cs" />
+     <Compile Include="Assets\Scripts\Characters\Classes\Agent.cs" />
+     <Compile Include="Assets\Scripts\Characters\Classes\TestClass.cs" />
+     <Compile Include="Assets\Scripts\Characters\CombatChar.cs" />
+     <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
+     <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraNode.cs" />
+     <Compile Include="Assets\Scripts\Characters\Pathfinding\Node.cs" />
+     <Compile Include="Assets\Scripts\Characters\Pathfinding\PriorityQueue.cs" />
+     <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
+     <Compile Include="Assets\Scripts\Characters\SearchZone.cs" />
+     <Compile Include="Assets\Scripts\GameController.cs" />
+     <Compile Include="Assets\Scripts\Item\Item.cs" />
+     <Compile Include="Assets\Scripts\Item\MeleeWeapon.cs" />
+     <Compile Include="Assets\Scripts\Item\RangedWeapon.cs" />
+     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
+     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
+     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
+     <Compile Include="Assets\Scripts\SceneContollers\NonCombatSceneController.cs" />
+     <Compile Include="Assets\Scripts\SceneContollers\SceneController.cs" />
+     <Compile Include="Assets\Scripts\SceneContollers\TestScene\InitializerAndTurnTest.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

@@ -142,7 +142,11 @@ public class TestClass : PlayableChar
         //dynamically shows which enemies can be attacked from the character's current position
         //gets list of enemies in range
         List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= AttackRange select enemy).ToList();
+
         //creates a targetting ui for each enemy in range that can be seen
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
         foreach (GameObject enemy in enemyList)
         {
             if (!Physics2D.Linecast(transform.position, enemy.transform.position))
@@ -151,6 +155,7 @@ public class TestClass : PlayableChar
                 unusedTargetIcons.RemoveAt(unusedTargetIcons.Count - 1);
                 targetIcons[enemy.transform.position].SetActive(true);
                 targetIcons[enemy.transform.position].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
+                targetIcons[enemy.transform.position].GetComponent<RectTransform>().sizeDelta = targetIconDimension;
             }
         }
 
@@ -218,7 +223,8 @@ public class TestClass : PlayableChar
     /// </summary>
     private IEnumerator Melee()
     {
-        waitingForAction = false; //this variable refers only to the main action menu
+        //this variable refers only to the main action menu
+        //status = PlayerStatus.SubActionMenu;
 
         #region UI set-up
         //deactivate action buttons
@@ -243,7 +249,10 @@ public class TestClass : PlayableChar
         targetIcons[selectedPosition].SetActive(false);
         selectedIcon.SetActive(true);
         selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
+        selectedIcon.GetComponent<RectTransform>().sizeDelta = targetIconDimension;
         #endregion
 
         //waits while the user is selecting a target
@@ -286,7 +295,7 @@ public class TestClass : PlayableChar
                 DrawTargets();
 
                 //bring up the action menu again
-                ActionMenu();
+                StartCoroutine("ActionMenu");
                 yield break;
             }
         }
@@ -304,7 +313,7 @@ public class TestClass : PlayableChar
         while (target.TakingDamage) { yield return null; }
 
         //allows TakeTurn to finish
-        actionCompleted = true;
+        status = PlayerStatus.Finished;
     }
 
     //damage calculation is off
@@ -313,7 +322,7 @@ public class TestClass : PlayableChar
     /// </summary>
     private IEnumerator Ranged()
     {
-        waitingForAction = false;
+        //status = PlayerStatus.SubActionMenu;
 
         #region UI set-up
         //removes the action menu before bringing up the next one
@@ -331,6 +340,10 @@ public class TestClass : PlayableChar
         targetIcons[selectedPosition].SetActive(false);
         selectedIcon.SetActive(true);
         selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
+        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
+        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
+        selectedIcon.GetComponent<RectTransform>().sizeDelta = targetIconDimension;
         #endregion
 
         //waits while the user is selecting a target
@@ -373,7 +386,7 @@ public class TestClass : PlayableChar
                 DrawTargets();
 
                 //bring up the action menu again
-                ActionMenu();
+                StartCoroutine("ActionMenu");
                 yield break;
             }
         }
@@ -392,7 +405,7 @@ public class TestClass : PlayableChar
         while (target.TakingDamage) { yield return null; }
 
         //allows TakeTurn to finish
-        actionCompleted = true;
+        status = PlayerStatus.Finished;
     }
 
 

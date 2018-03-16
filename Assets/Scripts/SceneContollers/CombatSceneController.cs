@@ -11,7 +11,11 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     [SerializeField] Vector3 bottomLeftCorner;
     [SerializeField] Vector3 topRightCorner;
 
-    List<CombatChar> goodGuys;
+    private List<CombatChar> goodGuys;
+
+    private static List<Enemy> enemies;
+
+    private static float[,] moveCosts;
 
     /// <summary>
     /// Gets the bottom left corner of the play area
@@ -27,7 +31,15 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// </summary>
     public List<CombatChar> GoodGuys { get { return goodGuys; } }
 
+    /// <summary>
+    /// Gets a matrix representing the cost to move to any tile [x, y]
+    /// </summary>
+    public static float[,] MoveCosts { get { return (float[,])moveCosts.Clone(); } }
 
+    /// <summary>
+    /// Gets a list of all enemies in the scene
+    /// </summary>
+    public static List<Enemy> Enemies { get { return enemies; } }
 
 
 
@@ -68,6 +80,33 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// </summary>
     protected IEnumerator PlayScene(List<PlayableChar> party)
     {
+        moveCosts = new float[(int)topRightCorner.x + 1, (int)TopRightCorner.y + 1];
+        for(int i = 0; i < moveCosts.GetLength(0); i++)
+        {
+            for(int j = 0; j < moveCosts.GetLength(1); j++)
+            {
+                moveCosts[i, j] = 1;
+            }
+        }
+
+        List<Vector3> blockedPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Blocking") select gameObject.transform.position).ToList();
+        for(int i = 0; i < blockedPositions.Count; i++)
+        {
+            moveCosts[(int)blockedPositions[i].x, (int)blockedPositions[i].y] = 0;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
         goodGuys = new List<CombatChar>();
 
 
@@ -102,7 +141,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
 
 
         //adds enemies to charList
-        List<Enemy> enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
+        enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
         foreach(Enemy enemy in enemies)
         {
             enemy.CreateTargetList(this);
@@ -243,6 +282,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                 while (currentTurnBlock.Contains(null)) { currentTurnBlock.Remove(null); }
                 while (nextList.Contains(null)) { nextList.Remove(null); }
                 while (goodGuys.Contains(null)) { goodGuys.Remove(null); }
+                while (enemies.Contains(null)) { enemies.Remove(null); }
                 yield return null;
 
                 //checks for objective completion, special events, etc. here

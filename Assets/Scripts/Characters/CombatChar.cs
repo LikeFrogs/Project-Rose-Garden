@@ -2,11 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//used to notify other characters of a move made by a certain character
+public delegate void MoveEventHandler(List<Vector3> path, CombatChar character);
+
 /// <summary>
 /// Parent class for all characters that participate in combat, playable or otherwise
 /// </summary>
 public abstract class CombatChar : MonoBehaviour
 {
+    public event MoveEventHandler OnMove;
+
     /// <summary>
     /// Character's current health
     /// </summary>
@@ -76,4 +81,17 @@ public abstract class CombatChar : MonoBehaviour
     /// </summary>
     /// <param name="damage">The amount of damage to take</param>
     public abstract void BeginTakeDamage(int damage);
+
+    /// <summary>
+    /// Notifies any subscribers of OnMove that this character has moved
+    /// </summary>
+    /// <param name="path">The path the character took</param>
+    protected void NotifyOfMove(List<Vector3> path)
+    {
+        if(OnMove != null)
+        {
+            //gives the subscriber the path taken and a reference to this character
+            OnMove(path, this);
+        }
+    }
 }

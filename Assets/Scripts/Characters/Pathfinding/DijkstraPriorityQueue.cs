@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PriorityQueue
+/// <summary>
+/// Priority Queue for Dijkstra's algorithm
+/// </summary>
+public class DijkstraPriorityQueue
 {
-    private List<List<Node>> containers;
-    private int lowestPriority;
+    private Dictionary<float, List<DijkstraNode>> containers;
+    private float lowestPriority;
     private int nonEmptyBuckets;
 
 
-    public PriorityQueue()
+    public DijkstraPriorityQueue(int maxPriority)
     {
-        containers = new List<List<Node>>();
-        for (int i = 0; i < containers.Count; i++) { containers[i] = new List<Node>(); }
-        lowestPriority = int.MaxValue;
-
+        containers = new Dictionary<float, List<DijkstraNode>>();
+        lowestPriority = float.PositiveInfinity;
         nonEmptyBuckets = 0;
     }
 
@@ -22,23 +23,28 @@ public class PriorityQueue
     /// Adds a node to the priority queue using its distance as priority
     /// </summary>
     /// <param name="node">The node to insert</param>
-    public void Insert(Node node)
+    public void Insert(DijkstraNode node)
     {
-        containers[node.F].Add(node);
-
         //if adding a node whose priority does not match that of any other node in the queue,
         //the number of non empty buckets will increase by 1
-        if (containers[node.F].Count == 1) { nonEmptyBuckets++; }
-
+        if (!containers.ContainsKey(node.Distance))
+        {
+            nonEmptyBuckets++;
+            containers[node.Distance] = new List<DijkstraNode>();
+        }else if(containers[node.Distance].Count == 0)
+        {
+            nonEmptyBuckets++;
+        }
+        containers[node.Distance].Add(node);
         //if the inserted node had a priority lower than the minimum, update the minimum
-        lowestPriority = Mathf.Min(lowestPriority, node.F);
+        lowestPriority = Mathf.Min(lowestPriority, node.Distance);
     }
 
     /// <summary>
     /// Returns the node with the smallest priority 
     /// (arbitrarily selected if there are multiple nodes with the same lowest priority)
     /// </summary>
-    public Node FindMin()
+    public DijkstraNode FindMin()
     {
         return containers[lowestPriority][containers[lowestPriority].Count - 1];
     }
@@ -47,9 +53,9 @@ public class PriorityQueue
     /// Returns and removes the node with the smallest priority 
     /// (arbitrarily selected if there are multiple nodes with the same lowest priority)
     /// </summary>
-    public Node ExtractMin()
+    public DijkstraNode ExtractMin()
     {
-        Node minNode = containers[lowestPriority][containers[lowestPriority].Count - 1];
+        DijkstraNode minNode = containers[lowestPriority][containers[lowestPriority].Count - 1];
         containers[lowestPriority].Remove(minNode);
 
         //if the last item of the lowest priority was removed, determine the new lowest priority
@@ -59,13 +65,12 @@ public class PriorityQueue
             //the number of non empty buckets has decreased by 1
             nonEmptyBuckets--;
 
-            lowestPriority = int.MaxValue;
-            for (int i = containers.Count - 1; i >= 0; i--)
+            lowestPriority = float.PositiveInfinity;
+            foreach(KeyValuePair<float, List<DijkstraNode>> pair in containers)
             {
-                if (containers[i].Count > 0) { lowestPriority = i; }
+                if(pair.Value.Count > 0 && pair.Key < lowestPriority) { lowestPriority = pair.Key; }
             }
         }
-
         return minNode;
     }
 
@@ -73,10 +78,10 @@ public class PriorityQueue
     /// Updates the priority of a node in the queue
     /// </summary>
     /// <param name="node">The node that should be updatated</param>
-    public void UpdatePriority(Node node)
+    public void UpdatePriority(DijkstraNode node)
     {
         //removes the node from the queue and reinserts it based on its new priority
-        containers[node.F].Remove(node);
+        containers[node.Distance].Remove(node);
         Insert(node);
     }
 

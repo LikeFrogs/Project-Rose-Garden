@@ -9,8 +9,11 @@ EditorBuildSettings:
     path: Assets/Scenes/TestStartupScene.unity
     guid: ab55ef0046412d54a9daee6521e528b6
   - enabled: 1
-    path: Assets/Scenes/TestScene.unity
-    guid: 1a5cd0d484ce1fb45b97d96dd989aa5e
-  - enabled: 1
     path: Assets/Scenes/EnemyTest.unity
     guid: fe8a59a834c4f36428d40776504f16c9
+  - enabled: 1
+    path: Assets/Scenes/DijkstraTest.unity
+    guid: 90ef37acd3800b24ab95a37580fcf119
+  - enabled: 0
+    path: 
+    guid: 1a5cd0d484ce1fb45b97d96dd989aa5e

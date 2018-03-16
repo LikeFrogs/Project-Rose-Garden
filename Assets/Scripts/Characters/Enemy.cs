@@ -9,14 +9,6 @@ using System.Linq;
 
 using System.Diagnostics;
 
-
-
-
-
-
-
-
-
 public enum EnemyStatus { Patrolling, Searching, Attacking }
 
 /// <summary>
@@ -125,45 +117,33 @@ public class Enemy : CombatChar
     #endregion
 
     #region Fields and properties for game flow
-    protected List<GameObject> unusedSightConeIndicators;
-    protected Dictionary<Vector3, GameObject> sightConeIndicators;
-    protected GameObject canvas;
-
-
-
-
-
-
-    protected List<CombatChar> enemies;
+    //target tracking
+    protected Dictionary<CombatChar, Vector3> lastKnowPositions;
+    protected List<CombatChar> targets;
     protected List<CombatChar> currentlySeenTargets;
 
 
 
-
-
-
-
-
-
+    //character UI
+    protected List<GameObject> unusedSightConeIndicators;
+    protected Dictionary<Vector3, GameObject> sightConeIndicators;
+    protected GameObject canvas;
+    //search related
     SearchZone currentSearchArea;
     List<List<Vector3>> positionsToSearch;
     [SerializeField] List<GameObject> searchZoneList;
     protected Dictionary<SearchZone, bool> searchZones;
-    protected List<Vector3> lastKnownPosition;
     protected int speedRemaining;
-
-
-    [SerializeField] EnemyStatus status;
-
-
+    //patrol related
     [SerializeField] List<Vector3> patrolPositions;
     protected int patrolPositionIndex;
+    //general control stuff
     protected bool isMoving;
     protected bool isTurning;
+    [SerializeField] EnemyStatus status;
     [SerializeField] int visionRange;
     [SerializeField] int currentFacingAngle;
     [SerializeField] int visionAngle;
-
     protected bool finishedTurn;
     protected bool takingDamage;
 
@@ -197,6 +177,8 @@ public class Enemy : CombatChar
     // Use this for initialization
     protected void Awake()
     {
+        lastKnowPositions = new Dictionary<CombatChar, Vector3>();
+
         currentlySeenTargets = new List<CombatChar>();
 
         searchZones = new Dictionary<SearchZone, bool>();
@@ -253,8 +235,15 @@ public class Enemy : CombatChar
     /// <param name="controller">The scene controller of the current scen</param>
     public void CreateTargetList(CombatSceneController controller)
     {
-        //stores the positions of the enemy's enemies
-        enemies = controller.GoodGuys;
+        //stores the positions of the enemy's targets
+        targets = controller.GoodGuys;
+
+        //when a target moves, check if it left the sight range or entered it
+        for(int i = 0; i < targets.Count; i++)
+        {
+            targets[i].OnMove += TargetMoved;
+        }
+
         //this is the first time before the scene fully starts that the enemy has enough information to calculate its vision cone
         CalculateVisionCone();
     }
@@ -265,6 +254,7 @@ public class Enemy : CombatChar
     public override void BeginTurn()
     {
         speedRemaining = speed;
+        CalculateVisionCone();
 
         if (status == EnemyStatus.Patrolling)
         {
@@ -321,6 +311,8 @@ public class Enemy : CombatChar
         finishedTurn = true;
     }
 
+
+    //******************************Possibly intelligently select one search zone that the target wouldn't be in (the enemy was just there/saw the target run the other way/etc.)
     /// <summary>
     /// Searches the area based on editor assigned search areas
     /// </summary>
@@ -401,24 +393,11 @@ public class Enemy : CombatChar
                 }
             }
         }
-
-
-
-
-
-
-
-
+             
         //removes the list of positions that has been searched
+        //and causes enemy to look around in current position
         for (int i = 0; i < positionsToSearch.Count; i++)
         {
-            //if (positionsToSearch[i].Contains(transform.position))
-            //{
-            //    positionsToSearch.Remove(positionsToSearch[i]);
-            //    i = positionsToSearch.Count;
-            //}
-
-
             int numlists = positionsToSearch[i].Count;
             for (int j = 0; j < numlists; j++)
             {
@@ -432,12 +411,6 @@ public class Enemy : CombatChar
                 }
             }
         }
-
-
-
-
-
-
 
         //resets the current search zone to null and checks off this search zone
         if (positionsToSearch.Count == 0)
@@ -503,7 +476,6 @@ public class Enemy : CombatChar
         //wait for the turn to finish before moving
         while (isTurning) { yield return null; }
 
-
         float t = 0; //time
         float moveSpeed = 5f;
 
@@ -521,8 +493,118 @@ public class Enemy : CombatChar
         //when done moving allow more input to be received
         isMoving = false;
     }
-    
 
+    /// <summary>
+    /// Turns to a specific angle
+    /// </summary>
+    /// <param name="targetDirection">The direction to turn to</param>
+    protected IEnumerator Turn(int targetDirection)
+    {
+        isTurning = true;
+
+        //normalize angles and numerically determine which direction to turn
+        int startAngle = currentFacingAngle;
+        while (startAngle > 360) { startAngle -= 360; }
+        while (startAngle < 0) { startAngle += 360; }
+        int goalAngle = targetDirection;
+        int difference = goalAngle - startAngle;
+        if (difference < 0) { difference += 360; }
+        if (difference <= 180)
+        {
+            //left
+            int degrees = goalAngle;
+            degrees -= startAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle + degrees;
+        }
+        else
+        {
+            //right
+            int degrees = startAngle;
+            degrees -= goalAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle - degrees;
+        }
+
+        float t = 0;
+        float turnSpeed = 1.5f;
+
+        //smoothly turn using lerp
+        while (t < 1f)
+        {
+            t += Time.deltaTime * turnSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone();
+            yield return null;
+        }
+        //ensures that the final facing angles are exact
+        currentFacingAngle = targetDirection;
+
+        isTurning = false;
+    }
+
+    /// <summary>
+    /// Moves and turns simultaneously, creating a "strafing" effect
+    /// </summary>
+    /// <param name="endPos">The target destination</param>
+    /// <param name="targetDirection">The direction to finish facing</param>
+    /// <returns></returns>
+    protected IEnumerator MoveAndTurn(Vector3 endPos, int targetDirection)
+    {
+        isMoving = true;
+
+        //normalize angles to [0, 360] and then numerically determine which direction to turn
+        int startAngle = currentFacingAngle;
+        while (startAngle > 360) { startAngle -= 360; }
+        while (startAngle < 0) { startAngle += 360; }
+        int goalAngle = targetDirection;
+        int difference = goalAngle - startAngle;
+        if (difference < 0) { difference += 360; }
+        if (difference <= 180)
+        {
+            //left
+            int degrees = goalAngle;
+            degrees -= startAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle + degrees;
+        }
+        else
+        {
+            //right
+            int degrees = startAngle;
+            degrees -= goalAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle - degrees;
+        }
+
+
+        Vector3 startPos = transform.position;
+
+        float t = 0; //time
+        float moveSpeed = 3.5f;
+
+        //smoothly moves and turns the character across the distance with lerp
+        while (t < 1f)
+        {
+            t += Time.deltaTime * moveSpeed;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
+            CalculateVisionCone(true);
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        //this is to ensure that the final angle is precise and does not suffer from math errors
+        currentFacingAngle = targetDirection;
+
+        yield return null;
+        CalculateVisionCone();
+        isMoving = false;
+    }
+    
     /// <summary>
     /// Calculates and displays the enemy's range of vision
     /// </summary>
@@ -576,7 +658,6 @@ public class Enemy : CombatChar
                     if(endAngle < 0) { endAngle += 360; }
                     if(pointAngle < 0) { pointAngle += 360; }
 
-
                     //if the square can be seen, then instantiate a UI element in the vision cone
                     Vector3 sightSquare = new Vector3(i, j);
                     if (pointAngle >= startAngle && pointAngle <= endAngle && !Physics2D.Linecast(transform.position, sightSquare)
@@ -585,19 +666,8 @@ public class Enemy : CombatChar
                         sightConeIndicators[sightSquare] = unusedSightConeIndicators[unusedSightConeIndicators.Count - 1];
                         unusedSightConeIndicators.RemoveAt(unusedSightConeIndicators.Count - 1);
                         sightConeIndicators[sightSquare].SetActive(true);
-
                         sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(sightSquare);
                         sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = sightIndicatorDimensions;
-
-
-
-
-
-
-                        //sightConeIndicators[sightSquare] = Instantiate(GameController.SightSquarePrefab);
-                        //sightConeIndicators[sightSquare].transform.SetParent(canvas.transform);
-                        //sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(sightSquare);
-                        //sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = sightIndicatorDimensions;
                     }
                 }
             }
@@ -608,8 +678,6 @@ public class Enemy : CombatChar
         {
             sightConeIndicators.Remove(sightConeIndicator.Key);
         }
-
-
 
         if (!skipTargetting)
         {
@@ -627,7 +695,7 @@ public class Enemy : CombatChar
             {
                 //get seen targets
                 List<CombatChar> seenTargets = new List<CombatChar>();
-                foreach (CombatChar target in enemies)
+                foreach (CombatChar target in targets)
                 {
                     if (sightConeIndicators.ContainsKey(target.transform.position))
                     {
@@ -638,6 +706,12 @@ public class Enemy : CombatChar
                 //sets the list of targets to only those that were not already within the enemy's line of sight before this method ran and adds those to the primary list of seen targets
                 seenTargets = (from CombatChar target in seenTargets where !currentlySeenTargets.Contains(target) select target).ToList();
                 currentlySeenTargets.AddRange(seenTargets);
+
+                //subscribe to see when newly seen targets move
+                for(int i = 0; i < seenTargets.Count; i++)
+                {
+                    seenTargets[i].OnMove += TargetMoved;
+                }
 
                 //if the enemy has seen a new target activate it's target sighted algorithm
                 if (seenTargets.Count > 0)
@@ -657,7 +731,6 @@ public class Enemy : CombatChar
     {
         finishedTurn = false;
 
-
         //calculates and turns towards the average of all target positions
         List<double> angles = new List<double>();
         foreach(CombatChar seenTarget in currentlySeenTargets)
@@ -674,7 +747,7 @@ public class Enemy : CombatChar
         int targetDirection = (int)(angles.Sum() / angles.Count);
         if (currentFacingAngle != targetDirection)
         {
-            StartCoroutine(Turn(targetDirection));
+            StartCoroutine(Turn(targetDirection)); //the actual turn
             while (isTurning) { yield return null; }
         }
 
@@ -805,10 +878,10 @@ public class Enemy : CombatChar
     {
         isTurning = true;
 
-
         int startAngle = currentFacingAngle;
         int goalAngle = currentFacingAngle + degrees;
 
+        //moves the direction the enemy is facing from start to goal
         float t = 0;
         float turnSpeed = 1.5f;
         while(t < 1f)
@@ -821,6 +894,7 @@ public class Enemy : CombatChar
 
         yield return new WaitForSeconds(.5f);
 
+        //turns back the other direction
         t = 0;
         startAngle = currentFacingAngle;
         goalAngle = currentFacingAngle - degrees * 2;
@@ -834,6 +908,7 @@ public class Enemy : CombatChar
 
         yield return new WaitForSeconds(.5f);
 
+        //returns to the original direction
         t = 0;
         startAngle = currentFacingAngle;
         goalAngle = currentFacingAngle + degrees;
@@ -845,133 +920,51 @@ public class Enemy : CombatChar
             yield return null;
         }
 
-
-
-        isTurning = false;
-    }
-
-    /// <summary>
-    /// Turns to a specific angle
-    /// </summary>
-    /// <param name="targetDirection">The direction to turn to</param>
-    protected IEnumerator Turn(int targetDirection)
-    {
-        isTurning = true;
-
-        //normalize angles and numerically determine which direction to turn
-        int startAngle = currentFacingAngle;
-        while (startAngle > 360) { startAngle -= 360; }
-        while (startAngle < 0) { startAngle += 360; }
-        int goalAngle = targetDirection;
-        int difference = goalAngle - startAngle;
-        if (difference < 0) { difference += 360; }
-        if(difference <=180)
-        {
-            //left
-            int degrees = goalAngle;
-            degrees -= startAngle;
-            if (degrees < 0) { degrees += 360; }
-
-            goalAngle = startAngle + degrees;
-        }
-        else
-        {
-            //right
-            int degrees = startAngle;
-            degrees -= goalAngle;
-            if (degrees < 0) { degrees += 360; }
-
-            goalAngle = startAngle - degrees;
-        }
-
-        float t = 0;
-        float turnSpeed = 1.5f;
-        //smoothly turn using lerp
-        while(t < 1f)
-        {
-            t += Time.deltaTime * turnSpeed;
-            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
-            CalculateVisionCone();
-            yield return null;
-        }
-        //ensures that the final facing angles are exact
-        currentFacingAngle = targetDirection;
-
-
         isTurning = false;
     }
 
 
 
 
-
-
-
-
-
-
-
     /// <summary>
-    /// Moves and turns simultaneously, creating a "strafing" effect
+    /// When a seen target moves, this determines if they are still seen and if not,
+    /// adds it to lastKnownPositions
     /// </summary>
-    /// <param name="endPos">The target destination</param>
-    /// <param name="targetDirection">The direction to finish facing</param>
-    /// <returns></returns>
-    protected IEnumerator MoveAndTurn(Vector3 endPos, int targetDirection)
+    /// <param name="path">the path the character took</param>
+    /// <param name="character">the character that moved</param>
+    protected void TargetMoved(List<Vector3> path, CombatChar character)
     {
-        isMoving = true;
-
-        //normalize angles to [0, 360] and then numerically determine which direction to turn
-        int startAngle = currentFacingAngle;
-        while (startAngle > 360) { startAngle -= 360; }
-        while (startAngle < 0) { startAngle += 360; }
-        int goalAngle = targetDirection;
-        int difference = goalAngle - startAngle;
-        if (difference < 0) { difference += 360; }
-        if (difference <= 180)
+        //if the target is visible after its move, nothing needs to happen
+        if (sightConeIndicators.ContainsKey(character.transform.position)) { return; }
+        //if the target did not pass through this enemy's vision range, nothing needs to happen
+        bool seen = false;
+        for(int i = 0; i < path.Count; i++)
         {
-            //left
-            int degrees = goalAngle;
-            degrees -= startAngle;
-            if (degrees < 0) { degrees += 360; }
-
-            goalAngle = startAngle + degrees;
+            if (sightConeIndicators.ContainsKey(path[i])) { seen = true; }
         }
-        else
+        if (!seen) { return; }
+
+        //if the target is not visible and was before its move, it is removed from the list of seen targets
+        if (currentlySeenTargets.Contains(character)) { currentlySeenTargets.Remove(character); }
+
+        //sets lastKnownPosition to the first vector3 after the last vector3 that is within sightConeIndicators 
+        Vector3 lastKnownPosition = path[path.Count - 1];
+        for (int i = path.Count - 2; i >= 0; i--)
         {
-            //right
-            int degrees = startAngle;
-            degrees -= goalAngle;
-            if (degrees < 0) { degrees += 360; }
-
-            goalAngle = startAngle - degrees;
-        }
-
-
-        Vector3 startPos = transform.position;
-
-        float t = 0; //time
-        float moveSpeed = 3.5f;
-
-        //smoothly moves and turns the character across the distance with lerp
-        while (t < 1f)
-        {
-            t += Time.deltaTime * moveSpeed;
-            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, t);
-            //CalculateVisionCone2(transform.position);
-            CalculateVisionCone(true);
-            transform.position = Vector3.Lerp(startPos, endPos, t);
-            yield return null;
+            if (sightConeIndicators.ContainsKey(path[i]))
+            {
+                i = -1;
+            }
+            else
+            {
+                lastKnownPosition = path[i];
+            }
         }
 
-        //this is to ensure that the final angle is precise and does not suffer from math errors
-        currentFacingAngle = targetDirection;
-
-
-        yield return null;
-        CalculateVisionCone();
-        isMoving = false;
+        lastKnowPositions[character] = lastKnownPosition;
     }
+
+
 
 
     /// <summary>

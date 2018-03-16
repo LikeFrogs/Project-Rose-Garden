@@ -47,7 +47,7 @@ public class Node
     /// <summary>
     /// Gets the total A* pathfinding cost of this Node (G + H values)
     /// </summary>
-    int F
+    public int F
     {
         get { return f; }
     }
@@ -82,19 +82,7 @@ public class Node
     }
     #endregion
 
-
-
-
-
-
-
     
-
-
-
-
-
-
     /// <summary>
     /// Determines if a character with a certain speed can reach endPos when starting from startPos
     /// </summary>
@@ -383,5 +371,4 @@ public class Node
         //return the length of the final path
         return finalPath.Count;
     }
-
 }
