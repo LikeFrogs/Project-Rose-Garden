@@ -12,7 +12,7 @@ public class DijkstraPriorityQueue
     private int nonEmptyBuckets;
 
 
-    public DijkstraPriorityQueue(int maxPriority)
+    public DijkstraPriorityQueue()
     {
         containers = new Dictionary<float, List<DijkstraNode>>();
         lowestPriority = float.PositiveInfinity;

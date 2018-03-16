@@ -371,4 +371,44 @@ public class Node
         //return the length of the final path
         return finalPath.Count;
     }
+
+    //public static List<Vector3> FindPath2(Vector3 startPos, Vector3 endPos, float[,] moveCosts)
+    //{
+    //    List<Vector3> closedSet = new List<Vector3>();
+
+    //    PriorityQueue openSet = new PriorityQueue();
+
+    //    Node start = new Node(startPos);
+
+    //    openSet.Insert(start);
+
+    //    Node current;
+    //    while (!openSet.IsEmpty())
+    //    {
+    //        current = openSet.ExtractMin();
+    //        //if current == end
+
+    //        closedSet.Add(current.pos);
+
+    //        List<Node> neighbors = current.GetNeighbors(closedSet, moveCosts.GetLength(0) - 1, moveCosts.GetLength(1) - 1, endPos);
+    //        for(int i = 0; i < neighbors.Count; i++)
+    //        {
+    //            openSet.Insert(neighbors[i]);
+    //        }
+    //    }
+    //}
+
+    //private List<Node> GetNeighbors(List<Vector3> closedSet, int maxX, int maxY, Vector3 endPos, float[,] moveCosts)
+    //{
+    //    List<Node> neighbors = new List<Node>();
+
+    //    Vector3 newPos;
+
+    //    if(pos.x - 1 >= 0 && closedSet.Contains((newPos = new Vector3(pos.x - 1, pos.y)))){ neighbors.Add(new Node(endPos, newPos, this, moveCosts[(int)newPos.x, (int)newPos.y])); }
+    //    if (pos.x + 1 <= maxX && closedSet.Contains((newPos = new Vector3(pos.x + 1, pos.y)))){ neighbors.Add(new Node(endPos, newPos, this, moveCosts[(int)newPos.x, (int)newPos.y])); }
+    //    if (pos.y - 1 >= 0 && closedSet.Contains((newPos = new Vector3(pos.x, pos.y - 1)))) { neighbors.Add(new Node(endPos, newPos, this, moveCosts[(int)newPos.x, (int)newPos.y])); }
+    //    if (pos.y + 1 <= maxY && closedSet.Contains((newPos = new Vector3(pos.x - 1, pos.y)))) { neighbors.Add(new Node(endPos, newPos, this, moveCosts[(int)newPos.x, (int)newPos.y])); }
+
+    //    return neighbors;
+    //}
 }

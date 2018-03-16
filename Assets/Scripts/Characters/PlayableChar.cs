@@ -246,7 +246,7 @@ public abstract class PlayableChar : CombatChar
         //***********************************************************TEMP
         if (takenPath.Count > 0)
         {
-            Debug.DrawLine(startingPosition, takenPath[0]);
+            //Debug.DrawLine(startingPosition, takenPath[0]);
 
             for (int i = 1; i < takenPath.Count; i++)
             {
@@ -551,15 +551,22 @@ public abstract class PlayableChar : CombatChar
         DrawTargets();
 
         //keeps track of the character's movement
-        if (transform.position == endPos)
+        if (transform.position == endPos && endPos != startPos)
         {
-            takenPath.AddRange(Node.FindPath(startPos, endPos));
-            //takenPath.Add(endPos);
+            //calculate move range
+            float[,] moveCosts = CombatSceneController.MoveCosts;
+            List<Enemy> enemies = CombatSceneController.Enemies;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+            }
+            takenPath.AddRange(AStarNode.FindPath(startPos, endPos, moveCosts));
+            //if the player's custom path is too long, recalculate it to the shortest path
             if (takenPath.Count > speed)
             {
-                takenPath = Node.FindPath(startingPosition, endPos);
+                takenPath = AStarNode.FindPath(startingPosition, endPos, moveCosts);
             }
-        }
+        }else if(transform.position == endPos && endPos == startPos) { takenPath.Clear(); }
         //if(endPos == startingPosition)
         //{
         //    takenPath.Clear();

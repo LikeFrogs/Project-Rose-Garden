@@ -12,8 +12,8 @@ public class DijkstraNode
     private float distance;
     private bool permanent;
     
-    int x;
-    int y;
+    private int x;
+    private int y;
 
     /// <summary>
     /// Gets the distance from the starting node to this node
@@ -40,7 +40,7 @@ public class DijkstraNode
     public static List<Vector3> MoveRange(Vector3 start, int speed, float[,] moveCosts)
     {        
         //creates the searh queue and adds the start to it
-        DijkstraPriorityQueue queue = new DijkstraPriorityQueue(speed);
+        DijkstraPriorityQueue queue = new DijkstraPriorityQueue();
         queue.Insert(new DijkstraNode((int)start.x, (int)start.y, true));
 
         //create a graph of all nodes (positions) to check
