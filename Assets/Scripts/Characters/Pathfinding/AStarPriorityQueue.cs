@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Priority queue for use with AStarNode's
+/// </summary>
 public class AStarPriorityQueue
 {
     private Dictionary<float, List<AStarNode>> containers;

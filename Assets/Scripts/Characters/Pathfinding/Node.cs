@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Linq;
 
 /// <summary>
-/// Used for pathfinding
+/// Deprecated and should be removed when possible
 /// </summary>
 public class Node
 {

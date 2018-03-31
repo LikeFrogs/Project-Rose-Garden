@@ -11,7 +11,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     [SerializeField] Vector3 bottomLeftCorner;
     [SerializeField] Vector3 topRightCorner;
 
-    private List<CombatChar> goodGuys;
+    private static List<CombatChar> goodGuys;
 
     private static List<Enemy> enemies;
 
@@ -29,7 +29,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// <summary>
     /// Gets the list of playable characters and allies
     /// </summary>
-    public List<CombatChar> GoodGuys { get { return goodGuys; } }
+    public static List<CombatChar> GoodGuys { get { return goodGuys; } }
 
     /// <summary>
     /// Gets a matrix representing the cost to move to any tile [x, y]
@@ -144,7 +144,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
         enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
         foreach(Enemy enemy in enemies)
         {
-            enemy.CreateTargetList(this);
+            enemy.CreateTargetList();
             charList.Add(enemy);
         }
 
@@ -201,7 +201,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
         nextList.AddRange(charList);
 
 
-        //*****************************************************************************Sorting
+        //******************************************************************************************************************************************Sorting
 
         //runs combat until the combat's objective is completed
         //could be kill all enemies or a battle specific objective
@@ -249,6 +249,12 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                         if (index >= currentTurnBlock.Count) { index = 0; }
                         currentTurnBlock[index].BeginTurn();
                     }
+
+                    else if(Input.GetButtonDown("CameraMode...") && currentTurnBlock[index] is PlayableChar) //**********************************************************Map analysis mode
+                    {
+
+                    }
+
                     yield return null;
                 }
 

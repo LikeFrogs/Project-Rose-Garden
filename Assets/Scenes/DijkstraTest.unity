@@ -9116,13 +9116,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 0
   maxMutationPoints: 0
-  maxSpeed: 6
+  maxSpeed: 7
   attack: 0
   magicAttack: 0
   defense: 0
   resistance: 0
   initiative: 0
-  attackRange: 0
+  attackRange: 3
   searchZoneList:
   - {fileID: 97140308}
   - {fileID: 551760181}
@@ -32399,17 +32399,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   wrappedList:
   - positionOptions:
-    - {x: 35, y: 11, z: 0}
+    - {x: 34, y: 8, z: 0}
     - {x: 35, y: 9, z: 0}
     - {x: 34, y: 10, z: 0}
-    - {x: 34, y: 8, z: 0}
+    - {x: 35, y: 11, z: 0}
   - positionOptions:
-    - {x: 26, y: -3, z: 0}
-    - {x: 25, y: -4, z: 0}
+    - {x: 34, y: 1, z: 0}
+    - {x: 35, y: 2, z: 0}
   - positionOptions:
-    - {x: 17, y: -2, z: 0}
-    - {x: 18, y: -3, z: 0}
-    - {x: 19, y: -2, z: 0}
+    - {x: 26, y: 3, z: 0}
+    - {x: 27, y: 2, z: 0}
+    - {x: 28, y: 1, z: 0}
 --- !u!4 &1113475638
 Transform:
   m_ObjectHideFlags: 0
@@ -49923,7 +49923,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1714123620
 MonoBehaviour:
   m_ObjectHideFlags: 0

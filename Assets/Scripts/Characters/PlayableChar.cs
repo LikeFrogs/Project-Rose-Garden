@@ -15,8 +15,8 @@ public abstract class PlayableChar : CombatChar
     #region Stats fields and properties
     protected int health;
     protected int maxHealth;
-    protected int mutationPoints; //not in base class
-    protected int maxMutationPoints; //not in base class
+    protected int mutationPoints;
+    protected int maxMutationPoints;
     protected int speed;
     protected int maxSpeed;
     protected int attack;

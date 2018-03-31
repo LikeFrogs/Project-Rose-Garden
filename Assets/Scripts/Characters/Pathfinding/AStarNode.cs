@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Nodes used for A* pathfinding
+/// </summary>
 public class AStarNode
 {
     #region Fields and Properties
@@ -94,7 +97,16 @@ public class AStarNode
     /// <returns>The cost</returns>
     public static int PathDistance(Vector3 startPos, Vector3 endPos, float[,] moveCosts)
     {
-        return FindPath(startPos, endPos, moveCosts).Count;
+        List<Vector3> path = FindPath(startPos, endPos, moveCosts);
+
+        return (path == null) ? int.MaxValue : path.Count;
+    }
+
+    public static bool CheckSquare(Vector3 startPos, Vector3 endPos, float[,] moveCosts, int speed)
+    {
+        List<Vector3> path = FindPath(startPos, endPos, moveCosts);
+
+        return (path == null) ? false : path.Count <= speed;
     }
 
     /// <summary>
