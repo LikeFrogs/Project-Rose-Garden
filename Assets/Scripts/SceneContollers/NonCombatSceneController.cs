@@ -19,7 +19,7 @@ public class NonCombatSceneController : MonoBehaviour, SceneController
     /// Calls the coroutine to begin the scene's gameplay
     /// </summary>
     /// <param name="party">The playable party</param>
-    public void StartScene(List<PlayableChar> party)
+    public void StartScene(List<PlayerCharacter> party)
     {
         StartCoroutine(BeginPlay(party));
     }
@@ -28,7 +28,7 @@ public class NonCombatSceneController : MonoBehaviour, SceneController
     /// Begins the scene
     /// </summary>
     /// <param name="party">The playable party</param>
-    public IEnumerator BeginPlay(List<PlayableChar> party)
+    public IEnumerator BeginPlay(List<PlayerCharacter> party)
     {
         yield break;
     }

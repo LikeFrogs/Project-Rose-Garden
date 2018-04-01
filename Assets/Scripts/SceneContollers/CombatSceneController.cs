@@ -55,7 +55,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// Begins play
     /// </summary>
     /// <param name="party">The playable party</param>
-    public abstract IEnumerator BeginPlay(List<PlayableChar> party);
+    public abstract IEnumerator BeginPlay(List<PlayerCharacter> party);
     /// <summary>
     /// Finishes and ends the scene
     /// </summary>
@@ -70,7 +70,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// Calls the coroutine to begin the scene's gameplay
     /// </summary>
     /// <param name="party">The playable party</param>
-    public void StartScene(List<PlayableChar> party)
+    public void StartScene(List<PlayerCharacter> party)
     {
         StartCoroutine(BeginPlay(party));
     }
@@ -78,7 +78,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// <summary>
     /// Runs combat scenes
     /// </summary>
-    protected IEnumerator PlayScene(List<PlayableChar> party)
+    protected IEnumerator PlayScene(List<PlayerCharacter> party)
     {
         moveCosts = new float[(int)topRightCorner.x + 1, (int)TopRightCorner.y + 1];
         for(int i = 0; i < moveCosts.GetLength(0); i++)
@@ -129,7 +129,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
         //GameController gameController = Camera.main.GetComponent<GameController>();
         if (party.Count != 0)
         {
-            foreach (PlayableChar character in party)
+            foreach (PlayerCharacter character in party)
             {
                 charList.Add(character);
                 goodGuys.Add(character);
@@ -210,9 +210,9 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
         {
             //sets up currentTurnBlock
             //this is all of the characters of the same type that are "adjacent" in the turn order
-            if (nextList.Count > 0 && nextList[0] is PlayableChar)
+            if (nextList.Count > 0 && nextList[0] is PlayerCharacter)
             {
-                while (nextList.Count > 0 && nextList[0] is PlayableChar)
+                while (nextList.Count > 0 && nextList[0] is PlayerCharacter)
                 {
                     currentTurnBlock.Add(nextList[0]);
                     nextList.RemoveAt(0);
@@ -241,7 +241,7 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                 //allows the player to switch between playable characters whose turns are directly in sequence
                 while (!currentTurnBlock[index].FinishedTurn)
                 {
-                    if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[index] is PlayableChar) //*********************************convert this to GetButtonDown
+                    if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[index] is PlayerCharacter) //*********************************convert this to GetButtonDown
                     {
                         currentTurnBlock[index].StopAllCoroutines();
                         currentTurnBlock[index].FinishedTurn = true;
@@ -250,10 +250,10 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
                         currentTurnBlock[index].BeginTurn();
                     }
 
-                    else if(Input.GetButtonDown("CameraMode...") && currentTurnBlock[index] is PlayableChar) //**********************************************************Map analysis mode
-                    {
+                    //else if(Input.GetButtonDown("CameraMode...") && currentTurnBlock[index] is PlayerCharacter) //**********************************************************Map analysis mode
+                    //{
 
-                    }
+                    //}
 
                     yield return null;
                 }

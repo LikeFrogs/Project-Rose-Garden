@@ -12,11 +12,11 @@ public interface SceneController
     /// Should only be called from GameController
     /// </summary>
     /// <param name="party">The playable party</param>
-    void StartScene(List<PlayableChar> party);
+    void StartScene(List<PlayerCharacter> party);
 
     /// <summary>
     /// Starts the scene. Should be called from StartScene
     /// </summary>
     /// <param name="party">The playable party</param>
-    IEnumerator BeginPlay(List<PlayableChar> party);
+    IEnumerator BeginPlay(List<PlayerCharacter> party);
 }

@@ -10,6 +10,8 @@ public class GameController : MonoBehaviour
 {
     #region Prefabs
     //editor assigned prefabs
+    [SerializeField] GameObject NEWPlayer;
+
     [SerializeField] GameObject bluePlayer;
     [SerializeField] GameObject redPlayer;
     [SerializeField] GameObject purpleSquare;
@@ -85,7 +87,8 @@ public class GameController : MonoBehaviour
     //tells this when to give control to the SceneController
     private bool sceneLoaded;
     //holds the playable party members between scenes
-    private List<PlayableChar> party;
+    //private List<PlayerCharacter> party;
+    private List<PlayerCharacter> party;
     #endregion
 
     #region Party inventory
@@ -122,13 +125,15 @@ public class GameController : MonoBehaviour
         sceneLoaded = false;
 
         //this is where character creation and such should be done
-        party = new List<PlayableChar>();
+        party = new List<PlayerCharacter>();
 
-        party.Add(Instantiate(bluePlayer, new Vector3(23, 10), Quaternion.identity).GetComponent<PlayableChar>());
-        //party.Add(Instantiate(redPlayer).GetComponent<PlayableChar>());
+        party.Add(Instantiate(NEWPlayer, new Vector3(23, 10), Quaternion.identity).GetComponent<PlayerCharacter>());
+        //party.Add(Instantiate(bluePlayer, new Vector3(23, 10), Quaternion.identity).GetComponent<PlayerCharacter>());
+        //party.Add(Instantiate(redPlayer).GetComponent<PlayerCharacter>());
 
-        party[0].GetComponent<PlayableChar>().Init(30, 8, 5, 15, 15, 2);
-        //party[1].GetComponent<PlayableChar>().Init(30, 7, 5, 15, 15, 2);
+        party[0].GetComponent<PlayerCharacter>().Init(30, 8, 5, 15, 15, 2);
+        //party[0].GetComponent<PlayerCharacter>().Init(30, 8, 5, 15, 15, 2);
+        //party[1].GetComponent<PlayerCharacter>().Init(30, 7, 5, 15, 15, 2);
 
         SceneManager.LoadScene("DijkstraTest");
     }
@@ -141,7 +146,7 @@ public class GameController : MonoBehaviour
         {
             sceneLoaded = false;
             SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
-            for(int i = 0; i < party.Count; i++) { party[i].OnSceneLoad(); }
+            //for(int i = 0; i < party.Count; i++) { party[i].OnSceneLoad(); }
             controller.StartScene(party);
         }
 	}

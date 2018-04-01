@@ -129,7 +129,7 @@ public abstract class PlayableChar : CombatChar
         get { return takingDamage; }
     }
     #endregion
-
+    //
     /// <summary>
     /// Sets up the stats of this character. Should only be called at character creation.
     /// </summary>
@@ -205,7 +205,7 @@ public abstract class PlayableChar : CombatChar
             DontDestroyOnLoad(indicator);
         }
     }
-
+    //
     /// <summary>
     /// Links this character to scene's canvas
     /// </summary>
@@ -304,7 +304,7 @@ public abstract class PlayableChar : CombatChar
             }
         }
     }
-
+    //
     /// <summary>
     /// Starts the coroutine that handles a character's turn
     /// </summary>
@@ -312,7 +312,7 @@ public abstract class PlayableChar : CombatChar
     {
         StartCoroutine("TakeTurn");
     }
-
+    //
     /// <summary>
     /// Handles the entire turn for playable characters
     /// </summary>
@@ -345,7 +345,7 @@ public abstract class PlayableChar : CombatChar
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
     }
-
+    //
     /// <summary>
     /// Calculates movement and attack ranges
     /// </summary>
@@ -414,7 +414,7 @@ public abstract class PlayableChar : CombatChar
             }
         }
     }
-    
+    //
     /// <summary>
     /// Sets all game flow variables to the state they should be in at the start and end of a turn
     /// </summary>
@@ -446,7 +446,7 @@ public abstract class PlayableChar : CombatChar
         NotifyOfMove(takenPath);
         takenPath.Clear();
     }
-
+    //
     /// <summary>
     /// Removes action buttons from the screen
     /// </summary>
@@ -461,7 +461,7 @@ public abstract class PlayableChar : CombatChar
         }
         actionButtons.Clear();
     }
-
+    //
     /// <summary>
     /// Removes target icons from the screen
     /// </summary>
@@ -475,7 +475,7 @@ public abstract class PlayableChar : CombatChar
         }
         targetIcons.Clear();
     }
-
+    //
     /// <summary>
     /// Starts the coroutine to deal damage to a character
     /// </summary>
@@ -484,7 +484,7 @@ public abstract class PlayableChar : CombatChar
     {
         StartCoroutine(TakeDamage(damage));
     }
-
+    //
     /// <summary>
     /// Runs when a character takes damage
     /// </summary>
@@ -512,7 +512,7 @@ public abstract class PlayableChar : CombatChar
 
         yield break;
     }
-
+    //
     /// <summary>
     /// Smoothly moves the player from their current position to a position one tile in the direction of input
     /// </summary>
@@ -586,12 +586,12 @@ public abstract class PlayableChar : CombatChar
         //when done moving allow more input to be received
         status = PlayerStatus.MovePhase;
     }
-
+    //
     /// <summary>
     /// highlights all enemies targetable from this space
     /// </summary>
     protected abstract void DrawTargets();
-
+    //
     /// <summary>
     /// Instantiates UI buttons for all possible actions
     /// </summary>
@@ -638,7 +638,7 @@ public abstract class PlayableChar : CombatChar
             }
         }
     }
-
+    //
     /// <summary>
     /// Determines which actions the character can take from it's current position
     /// </summary>
@@ -665,7 +665,7 @@ public abstract class PlayableChar : CombatChar
     {
         yield break;
     }
-
+    //
     /// <summary>
     /// Levels up this character
     /// </summary>

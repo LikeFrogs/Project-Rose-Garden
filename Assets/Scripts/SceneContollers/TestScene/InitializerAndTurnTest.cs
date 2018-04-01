@@ -11,7 +11,7 @@ public class InitializerAndTurnTest : CombatSceneController
     /// Runs all pre-combat dialogue and then calls the main combat coroutine
     /// </summary>
     /// <param name="party">The playable party</param>
-    public override IEnumerator BeginPlay(List<PlayableChar> party)
+    public override IEnumerator BeginPlay(List<PlayerCharacter> party)
     {
         //Any before combat dialogue/scene specific story stuff goes here
 

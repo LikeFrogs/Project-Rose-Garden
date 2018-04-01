@@ -158,7 +158,6 @@ public class TestClass : PlayableChar
                 targetIcons[enemy.transform.position].GetComponent<RectTransform>().sizeDelta = targetIconDimension;
             }
         }
-
     }
 
 
