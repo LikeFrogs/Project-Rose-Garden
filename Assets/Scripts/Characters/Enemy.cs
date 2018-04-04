@@ -9,7 +9,7 @@ using System.Linq;
 
 using System.Diagnostics;
 
-public enum EnemyStatus { Patrolling, Searching, Attacking, Hunting }
+public enum EnemyStatus { Patrolling, Searching, Attacking, Hunting, Deciding }
 
 /// <summary>
 /// NPC combat participants
@@ -173,7 +173,6 @@ public class Enemy : CombatChar
     }
     #endregion
 
-
     // Use this for initialization
     protected void Awake()
     {
@@ -274,6 +273,10 @@ public class Enemy : CombatChar
         {
             StartCoroutine(TargetSighted());
         }
+        else if(status == EnemyStatus.Deciding)
+        {
+            ChooseAttackAlgorithm();
+        }
         //******************************************************************Possibly some kind of special hunt routine for right after losing sight of a target?
     }
 
@@ -302,18 +305,21 @@ public class Enemy : CombatChar
             {
                 moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
             }
-
             path = AStarNode.FindPath(transform.position, patrolPositions[patrolPositionIndex], moveCosts);
         }
 
         //move through every square in the calculated path
-        if(path != null)
+        if (path != null)
         {
-            foreach(Vector3 position in path)
+            foreach (Vector3 position in path)
             {
-                StartCoroutine(Move(position));
-                //wait until finished moving
-                while (isMoving) { yield return null; }
+                if (speedRemaining > 0)
+                {
+                    StartCoroutine(Move(position));
+                    //wait until finished moving
+                    while (isMoving) { yield return null; }
+                    speedRemaining--;
+                }
             }
         }
 
@@ -323,7 +329,7 @@ public class Enemy : CombatChar
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
     }
-    
+
     //******************************Possibly intelligently select one search zone that the target wouldn't be in (the enemy was just there/saw the target run the other way/etc.)
     /// <summary>
     /// Searches the area based on editor assigned search areas
@@ -335,19 +341,20 @@ public class Enemy : CombatChar
 
         CalculateVisionCone();
 
+        float[,] moveCosts = CombatSceneController.MoveCosts;
+        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        for (int i = 0; i < goodGuys.Count; i++)
+        {
+            moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
+        }
+
         //determines the next area to search based on distance
         if (currentSearchArea == null)
         {
             int shortestDistance = int.MaxValue;
             foreach (KeyValuePair<SearchZone, bool> searchZone in searchZones)
             {
-                float[,] moveCosts = CombatSceneController.MoveCosts;
-                List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
-                for (int i = 0; i < goodGuys.Count; i++)
-                {
-                    moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
-                }
-
+ 
                 int pathDistance = AStarNode.PathDistance(transform.position, searchZone.Key.transform.position, moveCosts);
                 if (searchZone.Value == false && pathDistance <= shortestDistance)
                 {
@@ -364,12 +371,11 @@ public class Enemy : CombatChar
         {
             for (int j = 0; j < positionsToSearch[i].Count; j++)
             {
-                float[,] moveCosts = CombatSceneController.MoveCosts;
-                List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
-                for (int k = 0; i < goodGuys.Count; i++)
+                if(i >= positionsToSearch.Count || j >= positionsToSearch[i].Count)
                 {
-                    moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
+                    UnityEngine.Debug.Log("a;ldkfjas;ldkfja;sldkjf;alsdjf;lasdkjf;lasdkjf;lasdjf;laskdjf;lasjdf;lajsdf;ljasd;lfkja;lsksd");
                 }
+
 
                 if (AStarNode.CheckSquare(transform.position, positionsToSearch[i][j], moveCosts, speed))
                 {
@@ -403,13 +409,6 @@ public class Enemy : CombatChar
         if (reachablePositions.Count > 0)
         {
             int index = (new System.Random()).Next(reachablePositions.Count);
-
-            float[,] moveCosts = CombatSceneController.MoveCosts;
-            List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
-            for (int i = 0; i < goodGuys.Count; i++)
-            {
-                moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
-            }
 
             List<Vector3> path = AStarNode.FindPath(transform.position, reachablePositions[index], moveCosts);
 
@@ -480,7 +479,6 @@ public class Enemy : CombatChar
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
     }
-
 
     /// <summary>
     /// Smoothly moves the character from their current position to a position one tile in the direction of input
@@ -639,7 +637,7 @@ public class Enemy : CombatChar
         CalculateVisionCone();
         isMoving = false;
     }
-    
+
     /// <summary>
     /// Calculates and displays the enemy's range of vision
     /// </summary>
@@ -758,6 +756,50 @@ public class Enemy : CombatChar
             }
         }
     }
+
+    /// <summary>
+    /// When a seen target moves, this determines if they are still seen and if not,
+    /// adds it to lastKnownPositions
+    /// </summary>
+    /// <param name="path">the path the character took</param>
+    /// <param name="character">the character that moved</param>
+    protected void TargetMoved(List<Vector3> path, CombatChar character)
+    {
+        //if the target is visible after its move, nothing needs to happen
+        if (sightConeIndicators.ContainsKey(character.transform.position)) { return; }
+        //if the target did not pass through this enemy's vision range, nothing needs to happen
+        bool seen = false;
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (sightConeIndicators.ContainsKey(path[i])) { seen = true; }
+        }
+        if (!seen) { return; }
+
+        //if the target is not visible and was before its move, it is removed from the list of seen targets
+        if (currentlySeenTargets.Contains(character)) { currentlySeenTargets.Remove(character); }
+
+        //sets lastKnownPosition to the first vector3 after the last vector3 that is within sightConeIndicators 
+        Vector3 lastKnownPosition = path[path.Count - 1];
+        for (int i = path.Count - 2; i >= 0; i--)
+        {
+            if (sightConeIndicators.ContainsKey(path[i]))
+            {
+                i = -1;
+            }
+            else
+            {
+                lastKnownPosition = path[i];
+            }
+        }
+
+        lastKnowPositions[character] = lastKnownPosition;
+
+        status = EnemyStatus.Deciding;
+    }
+
+
+
+
 
 
     /// <summary>
@@ -971,141 +1013,175 @@ public class Enemy : CombatChar
     {
         finishedTurn = false;
 
-        if (currentlySeenTargets.Count > 0 && lastKnowPositions.Count == 0)
+
+        float[,] moveCosts = CombatSceneController.MoveCosts;
+        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        for (int i = 0; i < goodGuys.Count; i++)
         {
-            #region turn toward targets
-            //calculates and turns towards the average of all target positions
-            List<double> angles = new List<double>();
-            foreach (CombatChar seenTarget in currentlySeenTargets)
-            {
-                int relX = (int)seenTarget.transform.position.x - (int)transform.position.x;
-
-                int relY = (int)seenTarget.transform.position.y - (int)transform.position.y;
-
-                double degrees = System.Math.Atan2(relY, relX) * 180 / System.Math.PI;
-                while (degrees > 360) { degrees -= 360; }
-                while (degrees < 0) { degrees += 360; }
-                angles.Add(degrees);
-            }
-            int targetDirection = (int)(angles.Sum() / angles.Count);
-            if (currentFacingAngle != targetDirection)
-            {
-                StartCoroutine(Turn(targetDirection)); //the actual turn
-                while (isTurning) { yield return null; }
-            }
-            #endregion
-
-            //**************************************************************************************************************************************code timing
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
-            //creates a list of all targets that the enemy can attack from it's current position
-            List<CombatChar> reachableTargets = new List<CombatChar>();
-            foreach (CombatChar target in currentlySeenTargets)
-            {
-                int distance = System.Math.Abs((int)target.transform.position.x - (int)transform.position.x) + System.Math.Abs((int)target.transform.position.y - (int)transform.position.y);
-                if (distance <= attackRange)
-                {
-                    reachableTargets.Add(target);
-                }
-
-                //if (Node.PathDistance(transform.position, target.transform.position) <= attackRange)
-                //{
-                //    reachableTargets.Add(target);
-                //}
-            }
-
-            //if the enemy can attack a target without moving, it does so
-            if (reachableTargets.Count > 0)
-            {
-                //***********************************************************************analyze targets in someway
-                CombatChar target = reachableTargets[0];
-
-                //calculates damage to apply and calls TakeDamage()
-                //int damage = attack + attack - target.Defense;
-                target.BeginTakeDamage(100);
-                while (target.TakingDamage) { yield return null; }
-
-                yield return null; //wait for one Update so that the target is registered as null if it is destroyed
-                while (currentlySeenTargets.Contains(null))
-                {
-                    currentlySeenTargets.Remove(null);
-                }
-            }
-            //otherwise it moves towards its intended target
-            else
-            {
-                //**********************************************************************analyze targets in someway
-                CombatChar target = currentlySeenTargets[0];
-
-                //finds the shortest path to a square from which the enemy would be able to attack its target
-                Vector3 targetPos = new Vector3();
-                int shortestDistance = int.MaxValue;
-
-
-                //**************************Analyzing all squares within movement range takes too long...
-                //for (int x = (int)target.transform.position.x - attackRange; x <= (int)target.transform.position.x + attackRange; x++)
-                //{
-                //    for (int y = (int)target.transform.position.y - (attackRange - System.Math.Abs((int)target.transform.position.x - x)); System.Math.Abs((int)target.transform.position.x - x) + System.Math.Abs((int)target.transform.position.y - y) <= attackRange; y++)
-                //    {
-                //        Vector3 testPos = new Vector3(x, y);
-                //        int pathDistance = Node.PathDistance(transform.position, testPos);
-                //        if (pathDistance <= shortestDistance && pathDistance <= speedRemaining)
-                //        {
-                //            shortestDistance = pathDistance;
-                //            targetPos = testPos;
-                //        }
-                //    }
-                //}
-
-                //...so instead we check each square within the sight cone
-                foreach (KeyValuePair<Vector3, GameObject> sightSquare
-                    in sightConeIndicators.Where(Item => (System.Math.Abs((int)Item.Key.x - (int)target.transform.position.x) + System.Math.Abs((int)Item.Key.y - (int)target.transform.position.y)) <= attackRange).ToList())
-                {
-                    //************************************************************perhaps make sure that the target can be seen from the end square before calculating distance
-                    int pathDistance = Node.PathDistance(transform.position, sightSquare.Key);
-                    if (pathDistance <= shortestDistance)
-                    {
-                        shortestDistance = pathDistance;
-                        targetPos = sightSquare.Key;
-                    }
-                }
-
-                //moves towards the target position with as much movement as the enemy has remaing
-                List<Vector3> path = Node.FindPath(transform.position, targetPos);
-                if (path != null)
-                {
-                    foreach (Vector3 position in path)
-                    {
-                        if (speedRemaining > 0)
-                        {
-                            //calculates and turns towards the avearage of all target positions
-                            angles.Clear();
-                            foreach (CombatChar seenTarget in currentlySeenTargets)
-                            {
-                                int relX = (int)target.transform.position.x - (int)position.x;
-
-                                int relY = (int)target.transform.position.y - (int)position.y;
-
-                                double degrees = System.Math.Atan2(relY, relX) * 180 / System.Math.PI;
-                                while (degrees > 360) { degrees -= 360; }
-                                while (degrees < 0) { degrees += 360; }
-                                angles.Add(degrees);
-                            }
-                            targetDirection = (int)(angles.Sum() / angles.Count);
-                            //move and turn simultaneously towards the chosen target - "strafing"
-                            StartCoroutine(MoveAndTurn(position, targetDirection));
-                            while (isMoving) { yield return null; }
-                            speedRemaining--;
-                        }
-                    }
-                }
-                yield return null;
-            }
+            moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
         }
 
+
+        #region turn toward targets
+        //calculates and turns towards the average of all target positions
+        List<double> angles = new List<double>();
+        foreach (CombatChar seenTarget in currentlySeenTargets)
+        {
+            int relX = (int)seenTarget.transform.position.x - (int)transform.position.x;
+
+            int relY = (int)seenTarget.transform.position.y - (int)transform.position.y;
+
+            double degrees = System.Math.Atan2(relY, relX) * 180 / System.Math.PI;
+            while (degrees > 360) { degrees -= 360; }
+            while (degrees < 0) { degrees += 360; }
+            angles.Add(degrees);
+        }
+        int targetDirection = (int)(angles.Sum() / angles.Count);
+        if (currentFacingAngle != targetDirection)
+        {
+            StartCoroutine(Turn(targetDirection)); //the actual turn
+            while (isTurning) { yield return null; }
+        }
+        #endregion
+
+        //**************************************************************************************************************************************code timing
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
+        //creates a list of all targets that the enemy can attack from it's current position
+        List<CombatChar> reachableTargets = new List<CombatChar>();
+        foreach (CombatChar target in currentlySeenTargets)
+        {
+            int distance = System.Math.Abs((int)target.transform.position.x - (int)transform.position.x) + System.Math.Abs((int)target.transform.position.y - (int)transform.position.y);
+            if (distance <= attackRange)
+            {
+                reachableTargets.Add(target);
+            }
+
+            //if (Node.PathDistance(transform.position, target.transform.position) <= attackRange)
+            //{
+            //    reachableTargets.Add(target);
+            //}
+        }
+
+        //if the enemy can attack a target without moving, it does so
+        if (reachableTargets.Count > 0)
+        {
+            //***********************************************************************analyze targets in someway
+            CombatChar target = reachableTargets[0];
+
+            //calculates damage to apply and calls TakeDamage()
+            //int damage = attack + attack - target.Defense;
+            target.BeginTakeDamage(100);
+            while (target.TakingDamage) { yield return null; }
+
+            yield return null; //wait for one Update so that the target is registered as null if it is destroyed
+            while (currentlySeenTargets.Contains(null))
+            {
+                currentlySeenTargets.Remove(null);
+            }
+        }
+        //otherwise it moves towards its intended target
+        else
+        {
+            //**********************************************************************analyze targets in someway
+            CombatChar target = currentlySeenTargets[0];
+
+            //finds the shortest path to a square from which the enemy would be able to attack its target
+            Vector3 targetPos = new Vector3();
+            int shortestDistance = int.MaxValue;
+
+
+            //**************************Analyzing all squares within movement range takes too long...
+            //for (int x = (int)target.transform.position.x - attackRange; x <= (int)target.transform.position.x + attackRange; x++)
+            //{
+            //    for (int y = (int)target.transform.position.y - (attackRange - System.Math.Abs((int)target.transform.position.x - x)); System.Math.Abs((int)target.transform.position.x - x) + System.Math.Abs((int)target.transform.position.y - y) <= attackRange; y++)
+            //    {
+            //        Vector3 testPos = new Vector3(x, y);
+            //        int pathDistance = Node.PathDistance(transform.position, testPos);
+            //        if (pathDistance <= shortestDistance && pathDistance <= speedRemaining)
+            //        {
+            //            shortestDistance = pathDistance;
+            //            targetPos = testPos;
+            //        }
+            //    }
+            //}
+
+            //...so instead we check each square within the sight cone
+            foreach (KeyValuePair<Vector3, GameObject> sightSquare
+                in sightConeIndicators.Where(Item => (System.Math.Abs((int)Item.Key.x - (int)target.transform.position.x) + System.Math.Abs((int)Item.Key.y - (int)target.transform.position.y)) <= attackRange).ToList())
+            {
+                //************************************************************perhaps make sure that the target can be seen from the end square before calculating distance
+                int pathDistance = AStarNode.PathDistance(transform.position, sightSquare.Key, moveCosts);
+                if (pathDistance <= shortestDistance)
+                {
+                    shortestDistance = pathDistance;
+                    targetPos = sightSquare.Key;
+                }
+            }
+
+            //moves towards the target position with as much movement as the enemy has remaing
+            List<Vector3> path = AStarNode.FindPath(transform.position, targetPos, moveCosts);
+            if (path != null)
+            {
+                foreach (Vector3 position in path)
+                {
+                    if (speedRemaining > 0)
+                    {
+                        //calculates and turns towards the avearage of all target positions
+                        angles.Clear();
+                        foreach (CombatChar seenTarget in currentlySeenTargets)
+                        {
+                            int relX = (int)target.transform.position.x - (int)position.x;
+
+                            int relY = (int)target.transform.position.y - (int)position.y;
+
+                            double degrees = System.Math.Atan2(relY, relX) * 180 / System.Math.PI;
+                            while (degrees > 360) { degrees -= 360; }
+                            while (degrees < 0) { degrees += 360; }
+                            angles.Add(degrees);
+                        }
+                        targetDirection = (int)(angles.Sum() / angles.Count);
+                        //move and turn simultaneously towards the chosen target - "strafing"
+                        StartCoroutine(MoveAndTurn(position, targetDirection));
+                        while (isMoving) { yield return null; }
+                        speedRemaining--;
+                    }
+                }
+            }
+            yield return null;
+        }
+
+        //creates a list of all targets that the enemy can attack from it's current position
+        //and attacks the first one in the list
+        reachableTargets.Clear();
+        foreach (CombatChar target in currentlySeenTargets)
+        {
+            int distance = System.Math.Abs((int)target.transform.position.x - (int)transform.position.x) + System.Math.Abs((int)target.transform.position.y - (int)transform.position.y);
+            if (distance <= attackRange)
+            {
+                reachableTargets.Add(target);
+            }
+        }
+        if(reachableTargets.Count > 0)
+        {
+            CombatChar target = reachableTargets[0];
+
+            //calculates damage to apply and calls TakeDamage()
+            //int damage = attack + attack - target.Defense;
+            target.BeginTakeDamage(100);
+            while (target.TakingDamage) { yield return null; }
+        }
+        yield return null;
+        while (currentlySeenTargets.Contains(null))
+        {
+            currentlySeenTargets.Remove(null);
+        }
+
+
+
         //********************************************This will need to account for targets running out of sight, but still being known to be around
-        if (currentlySeenTargets.Count == 0)
+        if (currentlySeenTargets.Count == 0 && lastKnowPositions.Count == 0)
         {
             status = EnemyStatus.Patrolling;
         }
@@ -1118,43 +1194,79 @@ public class Enemy : CombatChar
 
 
 
-    /// <summary>
-    /// When a seen target moves, this determines if they are still seen and if not,
-    /// adds it to lastKnownPositions
-    /// </summary>
-    /// <param name="path">the path the character took</param>
-    /// <param name="character">the character that moved</param>
-    protected void TargetMoved(List<Vector3> path, CombatChar character)
+
+    protected void ChooseAttackAlgorithm()
     {
-        //if the target is visible after its move, nothing needs to happen
-        if (sightConeIndicators.ContainsKey(character.transform.position)) { return; }
-        //if the target did not pass through this enemy's vision range, nothing needs to happen
-        bool seen = false;
-        for(int i = 0; i < path.Count; i++)
+        if(currentlySeenTargets.Count > 0 && lastKnowPositions.Count == 0)
         {
-            if (sightConeIndicators.ContainsKey(path[i])) { seen = true; }
+            StartCoroutine(TargetSighted());
         }
-        if (!seen) { return; }
-
-        //if the target is not visible and was before its move, it is removed from the list of seen targets
-        if (currentlySeenTargets.Contains(character)) { currentlySeenTargets.Remove(character); }
-
-        //sets lastKnownPosition to the first vector3 after the last vector3 that is within sightConeIndicators 
-        Vector3 lastKnownPosition = path[path.Count - 1];
-        for (int i = path.Count - 2; i >= 0; i--)
+        
+        else if(currentlySeenTargets.Count == 0 && lastKnowPositions.Count > 0)
         {
-            if (sightConeIndicators.ContainsKey(path[i]))
-            {
-                i = -1;
-            }
-            else
-            {
-                lastKnownPosition = path[i];
-            }
+            StartCoroutine(Hunting()); 
         }
 
-        lastKnowPositions[character] = lastKnownPosition;
+        else if(currentlySeenTargets.Count > 0 && lastKnowPositions.Count > 0)
+        {
+            StartCoroutine(TargetSighted());
+        }
     }
+
+    protected IEnumerator Hunting()
+    {
+        float[,] moveCosts = CombatSceneController.MoveCosts;
+        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        for (int i = 0; i < goodGuys.Count; i++)
+        {
+            moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
+        }
+
+        Vector3 finalTarget = new Vector3();
+        //calculate and turn to check all last known positions
+        List<double> angles = new List<double>();
+        foreach (KeyValuePair<CombatChar, Vector3> pair in lastKnowPositions)
+        {
+            int relX = (int)pair.Value.x - (int)transform.position.x;
+
+            int relY = (int)pair.Value.y - (int)transform.position.y;
+
+            double degrees = System.Math.Atan2(relY, relX) * 180 / System.Math.PI;
+            while (degrees > 360) { degrees -= 360; }
+            while (degrees < 0) { degrees += 360; }
+            angles.Add(degrees);
+
+            finalTarget = pair.Value;
+        }
+        for(int i = 0; i < angles.Count; i++)
+        {
+            StartCoroutine(Turn((int)angles[i]));
+            while (isTurning) { yield return null; }
+        }
+
+
+
+        List<Vector3> path = AStarNode.FindPath(transform.position, finalTarget, moveCosts);
+        //move through every square in the calculated path
+        if (path != null)
+        {
+            foreach (Vector3 position in path)
+            {
+                if (speedRemaining > 0)
+                {
+                    StartCoroutine(Move(position));
+                    //wait until finished moving
+                    while (isMoving) { yield return null; }
+                    speedRemaining--;
+                }
+            }
+        }
+
+
+        //determine which zone not to search
+        StartCoroutine(Search());
+    }
+
 
 
 
