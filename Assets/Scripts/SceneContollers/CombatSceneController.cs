@@ -47,7 +47,10 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
 
 
 
-
+    private void Update()
+    {
+        
+    }
 
 
 
@@ -72,7 +75,132 @@ public abstract class CombatSceneController : MonoBehaviour, SceneController
     /// <param name="party">The playable party</param>
     public void StartScene(List<PlayerCharacter> party)
     {
-        StartCoroutine(BeginPlay(party));
+        moveCosts = new float[(int)topRightCorner.x + 1, (int)TopRightCorner.y + 1];
+        for (int i = 0; i < moveCosts.GetLength(0); i++)
+        {
+            for (int j = 0; j < moveCosts.GetLength(1); j++)
+            {
+                moveCosts[i, j] = 1;
+            }
+        }
+
+        List<Vector3> blockedPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Blocking") select gameObject.transform.position).ToList();
+        for (int i = 0; i < blockedPositions.Count; i++)
+        {
+            moveCosts[(int)blockedPositions[i].x, (int)blockedPositions[i].y] = 0;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        goodGuys = new List<CombatChar>();
+
+
+
+
+
+
+
+
+
+
+
+        List<CombatChar> charList = new List<CombatChar>();
+
+
+
+
+
+
+        //GameController gameController = Camera.main.GetComponent<GameController>();
+        if (party.Count != 0)
+        {
+            foreach (PlayerCharacter character in party)
+            {
+                charList.Add(character);
+                goodGuys.Add(character);
+            }
+        }
+
+
+
+
+
+        //adds enemies to charList
+        enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
+        foreach (Enemy enemy in enemies)
+        {
+            enemy.CreateTargetList();
+            charList.Add(enemy);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //any dialogue and such before combat goes here
+
+
+
+
+
+
+
+
+
+        //charList[0].transform.position = new Vector3(2, 2);
+        //charList[1].transform.position = new Vector3(0, 0);
+
+        //doing this would essentially remove the player from the scene -- useful for non combat scenes
+        //charList[0].gameObject.SetActive(false);
+
+
+
+
+        //set up party starting positions here
+
+
+        //ensures that all characters are active before battle starts
+        for (int i = 0; i < charList.Count; i++)
+        {
+            charList[i].gameObject.SetActive(true);
+        }
+
+
+
+        //splits charList into 3 groups: those that have finished their turn in a round, those that have yet to go and are of the same type, and those that have yet to go but are not of the same type
+        List<CombatChar> finishedList = new List<CombatChar>();
+        List<CombatChar> currentTurnBlock = new List<CombatChar>();
+        List<CombatChar> nextList = new List<CombatChar>();
+        nextList.AddRange(charList);
+
+
+        //******************************************************************************************************************************************Sorting
+
+
+
+       //StartCoroutine(BeginPlay(party));
     }
 
     /// <summary>
