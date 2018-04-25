@@ -103,7 +103,6 @@ public class GameController : MonoBehaviour
     }
     #endregion
 
-
     // Use this for initialization
     void Awake ()
     {
@@ -143,8 +142,11 @@ public class GameController : MonoBehaviour
         if (sceneLoaded)
         {
             sceneLoaded = false;
-            SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
+            //SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
             //for(int i = 0; i < party.Count; i++) { party[i].OnSceneLoad(); }
+
+            NewCombatSceneController controller = GameObject.FindWithTag("SceneController").GetComponent<NewCombatSceneController>();
+
             controller.StartScene(party);
         }
 	}

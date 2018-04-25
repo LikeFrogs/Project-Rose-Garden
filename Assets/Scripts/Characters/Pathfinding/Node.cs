@@ -96,8 +96,9 @@ public class Node
         bool found = false;
 
         //determines the bounds of the play area
-        CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
-        Vector3 bottomLeft = controller.BottomLeftCorner;
+        //CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
+        NewCombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<NewCombatSceneController>();
+        //Vector3 bottomLeft = controller.BottomLeftCorner;
         Vector3 topRight = controller.TopRightCorner;
 
 
@@ -145,7 +146,9 @@ public class Node
             //any Nodes that are added to the open list have their positions added to blockedList so they can't be readded in the future
             Vector3 currentPos = closedList[closedList.Count - 1].Position;
             Vector3 leftOne = new Vector3(currentPos.x - 1, currentPos.y);
-            if (!blockedList.Contains(leftOne) && (leftOne.x >= bottomLeft.x) && (leftOne.x >= startPos.x - speed))
+            if (!blockedList.Contains(leftOne) && (leftOne.x >= 0) && (leftOne.x >= startPos.x - speed))
+            //if (!blockedList.Contains(leftOne) && (leftOne.x >= bottomLeft.x) && (leftOne.x >= startPos.x - speed))
+
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x - 1, currentPos.y), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x - 1, currentPos.y));
@@ -157,7 +160,8 @@ public class Node
                 blockedList.Add(new Vector3(currentPos.x + 1, currentPos.y));
             }
             Vector3 downOne = new Vector3(currentPos.x, currentPos.y - 1);
-            if (!blockedList.Contains(downOne) && (downOne.y >= bottomLeft.y) && (downOne.y >= startPos.y - speed))
+            if (!blockedList.Contains(downOne) && (downOne.y >= 0) && (downOne.y >= startPos.y - speed))
+            //if (!blockedList.Contains(downOne) && (downOne.y >= bottomLeft.y) && (downOne.y >= startPos.y - speed))
             {
                 openList.Add(new Node(endPos, new Vector3(currentPos.x, currentPos.y - 1), closedList[closedList.Count - 1]));
                 blockedList.Add(new Vector3(currentPos.x, currentPos.y - 1));

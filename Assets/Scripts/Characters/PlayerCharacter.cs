@@ -214,8 +214,10 @@ public abstract class PlayerCharacter : CombatChar
                 if (transform.position != startingPosition)
                 {
                     //calculate move range
-                    float[,] moveCosts = CombatSceneController.MoveCosts;
-                    List<Enemy> enemies = CombatSceneController.Enemies;
+                    //float[,] moveCosts = CombatSceneController.MoveCosts;
+                    float[,] moveCosts = NewCombatSceneController.MoveCosts;
+                    //List<Enemy> enemies = CombatSceneController.Enemies;
+                    List<Enemy> enemies = NewCombatSceneController.Enemies;
                     for (int i = 0; i < enemies.Count; i++)
                     {
                         moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
@@ -351,8 +353,10 @@ public abstract class PlayerCharacter : CombatChar
     private void CalculateRanges()
     {
         //calculate move range
-        float[,] moveCosts = CombatSceneController.MoveCosts;
-        List<Enemy> enemies = CombatSceneController.Enemies;
+        //float[,] moveCosts = CombatSceneController.MoveCosts;
+        float[,] moveCosts = NewCombatSceneController.MoveCosts;
+        //List<Enemy> enemies = CombatSceneController.Enemies;
+        List<Enemy> enemies = NewCombatSceneController.Enemies;
         for (int i = 0; i < enemies.Count; i++)
         {
             moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;

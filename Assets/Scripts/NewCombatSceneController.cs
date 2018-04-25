@@ -8,22 +8,9 @@ public class NewCombatSceneController : MonoBehaviour
 {
     private CombatSceneState state;
 
-
-
-
-
     private List<CombatChar> finishedList;
     private List<CombatChar> currentTurnBlock;
     private List<CombatChar> nextList;
-
-
-
-
-
-
-
-
-
 
     [SerializeField] private Vector3 topRightCorner;
 
@@ -58,16 +45,19 @@ public class NewCombatSceneController : MonoBehaviour
         finishedList = new List<CombatChar>();
         currentTurnBlock = new List<CombatChar>();
         nextList = new List<CombatChar>();
+
+        goodGuys = new List<CombatChar>();
+        enemies = new List<Enemy>();
 	}
 	
 	// Update is called once per frame
 	void Update ()
     {
-		if(state == CombatSceneState.OpeningDialogue)
+        if (state == CombatSceneState.OpeningDialogue)
         {
             // TODO
-        }   
-
+        }
+        
         else if(state == CombatSceneState.Combat)
         {
             if (currentTurnBlock[0].FinishedTurn)
@@ -133,9 +123,13 @@ public class NewCombatSceneController : MonoBehaviour
             }
         }
         List<Vector3> blockedPositions = (from gameObject in GameObject.FindGameObjectsWithTag("Blocking") select gameObject.transform.position).ToList();
+        for (int i = 0; i < blockedPositions.Count; i++)
+        {
+            moveCosts[(int)blockedPositions[i].x, (int)blockedPositions[i].y] = 0;
+        }
 
         //adds all playable character to nextList and goodGuys
-        if(party.Count != 0)
+        if (party.Count != 0)
         {
             for(int i = 0; i < party.Count; i++)
             {
@@ -144,16 +138,23 @@ public class NewCombatSceneController : MonoBehaviour
             }
         }
 
-        //add snemies to nextList and runs their targeting set up
-        enemies = (from GameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
-        for (int i = 0; i < enemies.Count; i++)
+        ////add enemies to nextList and runs their targeting set up
+        //enemies = (from GameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
+        //for (int i = 0; i < enemies.Count; i++)
+        //{
+        //    enemies[i].CreateTargetList();
+        //    nextList.Add(enemies[i]);
+        //}
+        //adds enemies to charList
+        enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
+        foreach (Enemy enemy in enemies)
         {
-            enemies[i].CreateTargetList();
-            nextList.Add(enemies[i]);
+            enemy.CreateTargetList();
+            nextList.Add(enemy);
         }
 
         //ensures all combatants are active before commencing battle
-        for(int i = 0; i < nextList.Count; i++)
+        for (int i = 0; i < nextList.Count; i++)
         {
             nextList[i].gameObject.SetActive(true);
         }
@@ -165,7 +166,7 @@ public class NewCombatSceneController : MonoBehaviour
         state = CombatSceneState.Combat;
 
         //set up the first char to go
-        currentTurnBlock[0] = currentTurnBlock[0];
+        //currentTurnBlock[0] = currentTurnBlock[0];
         currentTurnBlock[0].BeginTurn();
     }
 
@@ -204,5 +205,5 @@ public class NewCombatSceneController : MonoBehaviour
     }
 
 
-
+    //protected abstract void CheckObjective();
 }

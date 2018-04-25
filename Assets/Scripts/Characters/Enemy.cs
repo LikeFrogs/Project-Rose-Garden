@@ -235,7 +235,8 @@ public class Enemy : CombatChar
     public void CreateTargetList()
     {
         //stores the positions of the enemy's targets
-        targets = CombatSceneController.GoodGuys;
+        //targets = CombatSceneController.GoodGuys;
+        targets = NewCombatSceneController.GoodGuys;
 
         //when a target moves, check if it left the sight range or entered it
         for(int i = 0; i < targets.Count; i++)
@@ -256,8 +257,6 @@ public class Enemy : CombatChar
 
         speedRemaining = speed;
         CalculateVisionCone();
-
-        UnityEngine.Debug.Log(";alksjdf");
 
         //if(currentlySeenTargets.Count == 0 && lastKnowPositions.Count > 0) { status = EnemyStatus.Hunting; }
 
@@ -299,8 +298,10 @@ public class Enemy : CombatChar
         List<Vector3> path = null;
         if (transform.position != patrolPositions[patrolPositionIndex])
         {
-            float[,] moveCosts = CombatSceneController.MoveCosts;
-            List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+            //float[,] moveCosts = CombatSceneController.MoveCosts;
+            float[,] moveCosts = NewCombatSceneController.MoveCosts;
+            //List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+            List<CombatChar> goodGuys = NewCombatSceneController.GoodGuys;
             for (int i = 0; i < goodGuys.Count; i++)
             {
                 moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
@@ -341,8 +342,10 @@ public class Enemy : CombatChar
 
         CalculateVisionCone();
 
-        float[,] moveCosts = CombatSceneController.MoveCosts;
-        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        //float[,] moveCosts = CombatSceneController.MoveCosts;
+        float[,] moveCosts = NewCombatSceneController.MoveCosts;
+        //List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        List<CombatChar> goodGuys = NewCombatSceneController.GoodGuys;
         for (int i = 0; i < goodGuys.Count; i++)
         {
             moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
@@ -394,7 +397,7 @@ public class Enemy : CombatChar
             {
                 for (int j = 0; j < positionsToSearch[i].Count; j++)
                 {
-                    int pathDistance = AStarNode.PathDistance(transform.position, positionsToSearch[i][j], CombatSceneController.MoveCosts);
+                    int pathDistance = AStarNode.PathDistance(transform.position, positionsToSearch[i][j], NewCombatSceneController.MoveCosts);
                     if (pathDistance < shortestDistance)
                     {
                         shortestDistance = pathDistance;
@@ -653,8 +656,10 @@ public class Enemy : CombatChar
         sightConeIndicators.Clear();
 
         //determines the bounds of the play area
-        CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
-        Vector3 bottomLeft = controller.BottomLeftCorner;
+        //CombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<CombatSceneController>();
+        NewCombatSceneController controller = GameObject.FindGameObjectWithTag("SceneController").GetComponent<NewCombatSceneController>();
+        //Vector3 bottomLeft = controller.BottomLeftCorner;
+        Vector3 bottomLeft = Vector3.zero;
         Vector3 topRight = controller.TopRightCorner;
 
         //sets up needed UI elements and calculations
@@ -1014,8 +1019,10 @@ public class Enemy : CombatChar
         finishedTurn = false;
 
 
-        float[,] moveCosts = CombatSceneController.MoveCosts;
-        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        //float[,] moveCosts = CombatSceneController.MoveCosts;
+        float[,] moveCosts = NewCombatSceneController.MoveCosts;
+        //List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        List<CombatChar> goodGuys = NewCombatSceneController.GoodGuys;
         for (int i = 0; i < goodGuys.Count; i++)
         {
             moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
@@ -1215,8 +1222,10 @@ public class Enemy : CombatChar
 
     protected IEnumerator Hunting()
     {
-        float[,] moveCosts = CombatSceneController.MoveCosts;
-        List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        //float[,] moveCosts = CombatSceneController.MoveCosts;
+        float[,] moveCosts = NewCombatSceneController.MoveCosts;
+        //List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
+        List<CombatChar> goodGuys = NewCombatSceneController.GoodGuys;
         for (int i = 0; i < goodGuys.Count; i++)
         {
             moveCosts[(int)goodGuys[i].transform.position.x, (int)goodGuys[i].transform.position.y] = 0;
