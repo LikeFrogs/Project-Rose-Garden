@@ -83,7 +83,7 @@ public class GameController : MonoBehaviour
     }
     #endregion
 
-    #region Instance data
+    #region Fields
     //tells this when to give control to the SceneController
     private bool sceneLoaded;
     //holds the playable party members between scenes
@@ -145,7 +145,7 @@ public class GameController : MonoBehaviour
             //SceneController controller = GameObject.FindWithTag("SceneController").GetComponent<SceneController>();
             //for(int i = 0; i < party.Count; i++) { party[i].OnSceneLoad(); }
 
-            NewCombatSceneController controller = GameObject.FindWithTag("SceneController").GetComponent<NewCombatSceneController>();
+            CombatSceneController controller = GameObject.FindWithTag("SceneController").GetComponent<CombatSceneController>();
 
             controller.StartScene(party);
         }

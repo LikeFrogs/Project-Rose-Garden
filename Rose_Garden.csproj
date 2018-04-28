@@ -13,11 +13,13 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile></CompilerResponseFile>
+    <CompilerResponseFile>
+    </CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows64:19</UnityBuildTarget>
     <UnityVersion>2017.1.1f1</UnityVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <LangVersion>4</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -78,18 +80,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Characters\Classes\Agent.cs" />
     <Compile Include="Assets\Scripts\Characters\Classes\NewTestClass.cs" />
-    <Compile Include="Assets\Scripts\Characters\Classes\TestClass.cs" />
     <Compile Include="Assets\Scripts\Characters\CombatChar.cs" />
     <Compile Include="Assets\Scripts\Characters\Enemy.cs" />
-    <Compile Include="Assets\Scripts\Characters\NewEnemy.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\AStarNode.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\AStarPriorityQueue.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraNode.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraPriorityQueue.cs" />
-    <Compile Include="Assets\Scripts\Characters\Pathfinding\Node.cs" />
-    <Compile Include="Assets\Scripts\Characters\PlayableChar.cs" />
     <Compile Include="Assets\Scripts\Characters\PlayerCharacter.cs" />
     <Compile Include="Assets\Scripts\Characters\SearchZone.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />
@@ -98,11 +95,7 @@
     <Compile Include="Assets\Scripts\Item\RangedWeapon.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
-    <Compile Include="Assets\Scripts\NewCombatSceneController.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
-    <Compile Include="Assets\Scripts\SceneContollers\NonCombatSceneController.cs" />
-    <Compile Include="Assets\Scripts\SceneContollers\SceneController.cs" />
-    <Compile Include="Assets\Scripts\SceneContollers\TestScene\InitializerAndTurnTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
