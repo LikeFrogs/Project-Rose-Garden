@@ -120,7 +120,7 @@ public class CombatSceneController : MonoBehaviour
         {
             Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
             cameraMoveStart = camera.transform.position;
-            cameraMoveEnd = new Vector3(camera.transform.position.x + System.Math.Sign(input.x), camera.transform.position.y + System.Math.Sign(input.y));
+            cameraMoveEnd = new Vector3(camera.transform.position.x + System.Math.Sign(input.x), camera.transform.position.y + System.Math.Sign(input.y), -10);
             lerpTime = 0f;
 
             state = CombatSceneState.MovingCamera;

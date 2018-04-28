@@ -107,7 +107,7 @@ public class GameController : MonoBehaviour
     void Awake ()
     {
         //this will be used for the entire game
-        DontDestroyOnLoad(transform);
+        DontDestroyOnLoad(transform.parent);
         //sets the BeginScene method to run whenever a new scene is loaded
         SceneManager.sceneLoaded += BeginScene;
 

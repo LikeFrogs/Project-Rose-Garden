@@ -363,17 +363,14 @@ public abstract class PlayerCharacter : CombatChar
         moveRange.AddRange(DijkstraNode.MoveRange(transform.position, speed, moveCosts));
 
         //UI object set up
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, -.5f));
-        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
-        Vector2 rangeIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
         for (int i = 0; i < moveRange.Count; i++)
         {
             moveRangeIndicators[moveRange[i]] = unusedMoveRangeIndicators[unusedMoveRangeIndicators.Count - 1];
             unusedMoveRangeIndicators.RemoveAt(unusedMoveRangeIndicators.Count - 1);
             moveRangeIndicators[moveRange[i]].SetActive(true);
 
-            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(moveRange[i]);
-            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
+            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().anchoredPosition = moveRange[i];
+            moveRangeIndicators[moveRange[i]].GetComponent<RectTransform>().sizeDelta = new Vector2(1,1);
         }
 
         //for every reachable square the entire attack range is checked for line of sight
@@ -407,8 +404,8 @@ public abstract class PlayerCharacter : CombatChar
                         attackRangeIndicators[testAtk] = indicator;
 
                         attackRangeIndicators[testAtk].transform.SetParent(canvas.transform);
-                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(testAtk);
-                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = rangeIndicatorDimensions;
+                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().anchoredPosition = testAtk;
+                        attackRangeIndicators[testAtk].GetComponent<RectTransform>().sizeDelta = new Vector2(1,1);
 
                     }
                 }
@@ -612,8 +609,8 @@ public abstract class PlayerCharacter : CombatChar
         for (int i = 0; i < menuList.Count; i++)
         {
             //set up each button appropriately
-            Vector2 buttonPosition = Camera.main.WorldToScreenPoint(new Vector3(transform.position.x + .5f, transform.position.y));
-            buttonPosition.y = buttonPosition.y - (30 * i);
+            Vector2 buttonPosition = new Vector3(transform.position.x + .5f, transform.position.y);
+            buttonPosition.y = buttonPosition.y - (.7f * i);
             actionButtons[buttonPosition] = unusedActionButtons[unusedActionButtons.Count - 1];
             unusedActionButtons.RemoveAt(unusedActionButtons.Count - 1);
             actionButtons[buttonPosition].SetActive(true);

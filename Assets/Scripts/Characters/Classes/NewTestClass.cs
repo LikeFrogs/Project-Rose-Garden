@@ -170,7 +170,7 @@ public class NewTestClass : PlayerCharacter
                 targetIcons[lastSelectedPosition].SetActive(true);
 
                 //sets the newly selected square to have selected UI
-                selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
+                selectedIcon.GetComponent<RectTransform>().anchoredPosition = selectedPosition;
             }
 
             //confirms the action
@@ -220,9 +220,6 @@ public class NewTestClass : PlayerCharacter
         List<GameObject> enemyList = (from GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy") where System.Math.Abs((int)transform.position.x - enemy.transform.position.x) + System.Math.Abs((int)transform.position.y - enemy.transform.position.y) <= AttackRange select enemy).ToList();
 
         //creates a targetting ui for each enemy in range that can be seen
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
-        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
-        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
         foreach (GameObject enemy in enemyList)
         {
             if (!Physics2D.Linecast(transform.position, enemy.transform.position))
@@ -230,8 +227,8 @@ public class NewTestClass : PlayerCharacter
                 targetIcons[enemy.transform.position] = unusedTargetIcons[unusedTargetIcons.Count - 1];
                 unusedTargetIcons.RemoveAt(unusedTargetIcons.Count - 1);
                 targetIcons[enemy.transform.position].SetActive(true);
-                targetIcons[enemy.transform.position].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(enemy.transform.position);
-                targetIcons[enemy.transform.position].GetComponent<RectTransform>().sizeDelta = targetIconDimension;
+                targetIcons[enemy.transform.position].GetComponent<RectTransform>().anchoredPosition = enemy.transform.position;
+                targetIcons[enemy.transform.position].GetComponent<RectTransform>().sizeDelta = new Vector2(.5f, .5f);
             }
         }
     }
@@ -318,11 +315,8 @@ public class NewTestClass : PlayerCharacter
         selectedPosition = targets[targetIndex];
         targetIcons[selectedPosition].SetActive(false);
         selectedIcon.SetActive(true);
-        selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
-        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
-        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
-        selectedIcon.GetComponent<RectTransform>().sizeDelta = targetIconDimension;
+        selectedIcon.GetComponent<RectTransform>().anchoredPosition = selectedPosition;
+        selectedIcon.GetComponent<RectTransform>().sizeDelta = new Vector2(.5f, .5f);
 
         classStatus = NewTestClassStatus.Targeting;
     }
@@ -348,11 +342,8 @@ public class NewTestClass : PlayerCharacter
         selectedPosition = targets[targetIndex];
         targetIcons[selectedPosition].SetActive(false);
         selectedIcon.SetActive(true);
-        selectedIcon.GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(selectedPosition);
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, 0));
-        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
-        Vector2 targetIconDimension = new Vector2(top.y - bottom.y, top.y - bottom.y);
-        selectedIcon.GetComponent<RectTransform>().sizeDelta = targetIconDimension;
+        selectedIcon.GetComponent<RectTransform>().anchoredPosition = selectedPosition;
+        selectedIcon.GetComponent<RectTransform>().sizeDelta = new Vector2(.5f, .5f);
 
         classStatus = NewTestClassStatus.Targeting;
 

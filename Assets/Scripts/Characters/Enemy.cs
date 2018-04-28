@@ -662,11 +662,6 @@ public class Enemy : CombatChar
         Vector3 bottomLeft = Vector3.zero;
         Vector3 topRight = controller.TopRightCorner;
 
-        //sets up needed UI elements and calculations
-        Vector2 bottom = Camera.main.WorldToScreenPoint(new Vector3(0, -.5f));
-        Vector2 top = Camera.main.WorldToScreenPoint(new Vector3(0, .5f));
-        Vector2 sightIndicatorDimensions = new Vector2(top.y - bottom.y, top.y - bottom.y);
-
         //check every square within vision range
         for(int i = (int)transform.position.x - visionRange; i <= transform.position.x + visionRange; i++)
         {
@@ -704,8 +699,8 @@ public class Enemy : CombatChar
                         sightConeIndicators[sightSquare] = unusedSightConeIndicators[unusedSightConeIndicators.Count - 1];
                         unusedSightConeIndicators.RemoveAt(unusedSightConeIndicators.Count - 1);
                         sightConeIndicators[sightSquare].SetActive(true);
-                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = Camera.main.WorldToScreenPoint(sightSquare);
-                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = sightIndicatorDimensions;
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().anchoredPosition = sightSquare;
+                        sightConeIndicators[sightSquare].GetComponent<RectTransform>().sizeDelta = new Vector2(1,1);
                     }
                 }
             }
