@@ -2,11 +2,16 @@
 using System.Linq;
 using UnityEngine;
 
-public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat }
+public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera }
 
-public class NewCombatSceneController : MonoBehaviour
+public class CombatSceneController : MonoBehaviour
 {
     private CombatSceneState state;
+
+    private Camera camera;
+    private Vector3 cameraMoveStart;
+    private Vector3 cameraMoveEnd;
+    private float lerpTime;
 
     private List<CombatChar> finishedList;
     private List<CombatChar> currentTurnBlock;
@@ -48,6 +53,9 @@ public class NewCombatSceneController : MonoBehaviour
 
         goodGuys = new List<CombatChar>();
         enemies = new List<Enemy>();
+
+        camera = Camera.main;
+        camera.transform.position = new Vector3((int)(topRightCorner.x / 2), (int)(topRightCorner.y / 2), -10);
 	}
 	
 	// Update is called once per frame
@@ -77,6 +85,7 @@ public class NewCombatSceneController : MonoBehaviour
                 //starts the next turn
                 if(currentTurnBlock.Count > 0)
                 {
+                    camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
                     currentTurnBlock[0].BeginTurn();
                 }
                 else
@@ -84,17 +93,47 @@ public class NewCombatSceneController : MonoBehaviour
                     SortLists();
                     if(currentTurnBlock.Count > 0)
                     {
+                        camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
                         currentTurnBlock[0].BeginTurn();
                     }
                 }
             }
             //switces to the next player character when the user presses tab while in a block of PlayerCharacters
-            else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter)
+            else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter) //******************************************************************Switch to button
             {
                 currentTurnBlock[0].FinishedTurn = true;
-                currentTurnBlock.RemoveAt(0);
                 currentTurnBlock.Add(currentTurnBlock[0]);
+                currentTurnBlock.RemoveAt(0);
+
+                camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
                 currentTurnBlock[0].BeginTurn();
+            }
+            //switches into free movement of camera for character analysis
+            else if(Input.GetKeyDown(KeyCode.C)  && currentTurnBlock[0] is PlayerCharacter)
+            {
+                currentTurnBlock[0].FinishedTurn = true;
+                state = CombatSceneState.CameraMode;
+            }
+        }
+
+        if(state == CombatSceneState.CameraMode)
+        {
+            Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+            cameraMoveStart = camera.transform.position;
+            cameraMoveEnd = new Vector3(camera.transform.position.x + System.Math.Sign(input.x), camera.transform.position.y + System.Math.Sign(input.y));
+            lerpTime = 0f;
+
+            state = CombatSceneState.MovingCamera;
+        }
+
+        if(state == CombatSceneState.MovingCamera)
+        {
+            lerpTime += Time.deltaTime * 5;
+            camera.transform.position = Vector3.Lerp(cameraMoveStart, cameraMoveEnd, lerpTime);
+
+            if(lerpTime >= 1f)
+            {
+                state = CombatSceneState.CameraMode;
             }
         }
 
@@ -166,7 +205,7 @@ public class NewCombatSceneController : MonoBehaviour
         state = CombatSceneState.Combat;
 
         //set up the first char to go
-        //currentTurnBlock[0] = currentTurnBlock[0];
+        camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
         currentTurnBlock[0].BeginTurn();
     }
 
