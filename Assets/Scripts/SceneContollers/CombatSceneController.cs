@@ -8,6 +8,7 @@ public class CombatSceneController : MonoBehaviour
 {
     private CombatSceneState state;
 
+    private Canvas worldCanvas;
     private Camera camera;
     private Vector3 cameraMoveStart;
     private Vector3 cameraMoveEnd;
@@ -56,6 +57,9 @@ public class CombatSceneController : MonoBehaviour
 
         camera = Camera.main;
         camera.transform.position = new Vector3((int)(topRightCorner.x / 2), (int)(topRightCorner.y / 2), -10);
+
+        worldCanvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
+        worldCanvas.GetComponent<RectTransform>().sizeDelta = topRightCorner;
 	}
 	
 	// Update is called once per frame
