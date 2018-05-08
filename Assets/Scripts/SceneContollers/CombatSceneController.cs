@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera }
+public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera, DampingCamera }
 
 public class CombatSceneController : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public class CombatSceneController : MonoBehaviour
     private Vector3 cameraMoveStart;
     private Vector3 cameraMoveEnd;
     private float lerpTime;
+    private Vector3 dampVelocity;
 
     private List<CombatChar> finishedList;
     private List<CombatChar> currentTurnBlock;
@@ -86,21 +87,36 @@ public class CombatSceneController : MonoBehaviour
 
                 //****************************************************************Check Objective
 
-                //starts the next turn
-                if(currentTurnBlock.Count > 0)
+
+
+                if(currentTurnBlock.Count <= 0) { SortLists(); }
+
+                if (currentTurnBlock.Count > 0)
                 {
-                    camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
-                    currentTurnBlock[0].BeginTurn();
+                    state = CombatSceneState.DampingCamera;
+                    cameraMoveEnd = currentTurnBlock[0].transform.position;
+                    cameraMoveEnd.z = -10;
+                    dampVelocity = Vector3.zero;
                 }
-                else
-                {
-                    SortLists();
-                    if(currentTurnBlock.Count > 0)
-                    {
-                        camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
-                        currentTurnBlock[0].BeginTurn();
-                    }
-                }
+                
+
+
+
+
+
+                ////starts the next turn
+                //if(currentTurnBlock.Count > 0)
+                //{
+                //    currentTurnBlock[0].BeginTurn();
+                //}
+                //else
+                //{
+                //    SortLists();
+                //    if(currentTurnBlock.Count > 0)
+                //    {
+                //        currentTurnBlock[0].BeginTurn();
+                //    }
+                //}
             }
             //switces to the next player character when the user presses tab while in a block of PlayerCharacters
             else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter) //******************************************************************Switch to button
@@ -109,8 +125,12 @@ public class CombatSceneController : MonoBehaviour
                 currentTurnBlock.Add(currentTurnBlock[0]);
                 currentTurnBlock.RemoveAt(0);
 
-                camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
-                currentTurnBlock[0].BeginTurn();
+                state = CombatSceneState.DampingCamera;
+                cameraMoveEnd = currentTurnBlock[0].transform.position;
+                cameraMoveEnd.z = -10;
+                dampVelocity = Vector3.zero;
+                //camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
+                //currentTurnBlock[0].BeginTurn();
             }
             //switches into free movement of camera for character analysis
             else if(Input.GetKeyDown(KeyCode.C)  && currentTurnBlock[0] is PlayerCharacter)
@@ -120,7 +140,32 @@ public class CombatSceneController : MonoBehaviour
             }
         }
 
-        if(state == CombatSceneState.CameraMode)
+        //Vector3 velocity = Vector3.zero;
+        if (state == CombatSceneState.DampingCamera)
+        {
+            camera.transform.position = Vector3.SmoothDamp(camera.transform.position, cameraMoveEnd, ref dampVelocity, .5f);
+            //camera.transform.position = Vector3.Lerp(cameraMoveStart, cameraMoveEnd, lerpTime);
+
+            //Debug.Log("camera.transform.position : (" + camera.transform.position.x +", " + camera.transform.position.y + ", " + camera.transform.position.z + ")"
+              //  + "cameraMoveEnd : (" + cameraMoveEnd.x + ", " + cameraMoveEnd.y + ", " + cameraMoveEnd.z + ")");
+
+            float deltaX = System.Math.Abs(camera.transform.position.x - cameraMoveEnd.x);
+            float deltaY = System.Math.Abs(camera.transform.position.y - cameraMoveEnd.y);
+            Debug.Log("Delta x : " + deltaX + " Delta y : " + deltaY + " Velocity : " + dampVelocity);
+
+            //camera.transform.position = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y)
+
+            //if(camera.transform.position == cameraMoveEnd)
+            if (deltaX <= .4f && deltaY <= .4f)
+            {
+                //camera.transform.position = cameraMoveEnd;
+                currentTurnBlock[0].BeginTurn();
+                state = CombatSceneState.Combat;
+            }
+        }
+
+
+        if (state == CombatSceneState.CameraMode)
         {
             Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
             cameraMoveStart = camera.transform.position;
