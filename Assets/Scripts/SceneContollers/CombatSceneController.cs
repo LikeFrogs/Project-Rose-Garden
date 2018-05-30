@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -10,6 +10,7 @@ public class CombatSceneController : MonoBehaviour
 
     private Canvas worldCanvas;
     private Camera camera;
+    private Dictionary<Vector3, CombatChar> currentCombatantPositions;
     private Vector3 cameraMoveStart;
     private Vector3 cameraMoveEnd;
     private float lerpTime;
@@ -46,12 +47,14 @@ public class CombatSceneController : MonoBehaviour
 
 
 
-	// Use this for initialization
-	void Start ()
+    // Use this for initialization
+    void Start()
     {
         finishedList = new List<CombatChar>();
         currentTurnBlock = new List<CombatChar>();
         nextList = new List<CombatChar>();
+
+        currentCombatantPositions = new Dictionary<Vector3, CombatChar>();
 
         goodGuys = new List<CombatChar>();
         enemies = new List<Enemy>();
@@ -61,20 +64,21 @@ public class CombatSceneController : MonoBehaviour
 
         worldCanvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
         worldCanvas.GetComponent<RectTransform>().sizeDelta = topRightCorner;
-	}
-	
-	// Update is called once per frame
-	void Update ()
+    }
+
+    // Update is called once per frame
+    void Update()
     {
         if (state == CombatSceneState.OpeningDialogue)
         {
             // TODO
         }
-        
-        else if(state == CombatSceneState.Combat)
+
+        else if (state == CombatSceneState.Combat)
         {
             if (currentTurnBlock[0].FinishedTurn)
             {
+                //sets the character who was taking a turn as finished
                 finishedList.Add(currentTurnBlock[0]);
                 currentTurnBlock.RemoveAt(0);
 
@@ -88,9 +92,10 @@ public class CombatSceneController : MonoBehaviour
                 //****************************************************************Check Objective
 
 
+                //if there is no character who is "up next" sort the lists
+                if (currentTurnBlock.Count <= 0) { SortLists(); }
 
-                if(currentTurnBlock.Count <= 0) { SortLists(); }
-
+                //move the camera to the next character
                 if (currentTurnBlock.Count > 0)
                 {
                     state = CombatSceneState.DampingCamera;
@@ -98,67 +103,52 @@ public class CombatSceneController : MonoBehaviour
                     cameraMoveEnd.z = -10;
                     dampVelocity = Vector3.zero;
                 }
-                
-
-
-
-
-
-                ////starts the next turn
-                //if(currentTurnBlock.Count > 0)
-                //{
-                //    currentTurnBlock[0].BeginTurn();
-                //}
-                //else
-                //{
-                //    SortLists();
-                //    if(currentTurnBlock.Count > 0)
-                //    {
-                //        currentTurnBlock[0].BeginTurn();
-                //    }
-                //}
             }
             //switces to the next player character when the user presses tab while in a block of PlayerCharacters
-            else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter) //******************************************************************Switch to button
+            else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter) //******************************************************************change to GetButtonDown
             {
+                //ends the current characters turn
                 currentTurnBlock[0].FinishedTurn = true;
                 currentTurnBlock.Add(currentTurnBlock[0]);
                 currentTurnBlock.RemoveAt(0);
 
+                //moves camera to the next character
                 state = CombatSceneState.DampingCamera;
                 cameraMoveEnd = currentTurnBlock[0].transform.position;
                 cameraMoveEnd.z = -10;
                 dampVelocity = Vector3.zero;
-                //camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
-                //currentTurnBlock[0].BeginTurn();
             }
             //switches into free movement of camera for character analysis
-            else if(Input.GetKeyDown(KeyCode.C)  && currentTurnBlock[0] is PlayerCharacter)
+            else if (Input.GetKeyDown(KeyCode.C) && currentTurnBlock[0] is PlayerCharacter)
             {
                 currentTurnBlock[0].FinishedTurn = true;
                 state = CombatSceneState.CameraMode;
+
+                //stores the positions of the combatants at the current time
+                currentCombatantPositions.Clear();
+                for (int i = 0; i < finishedList.Count; i++) { currentCombatantPositions[finishedList[i].transform.position] = finishedList[i]; }
+                for (int i = 0; i < currentTurnBlock.Count; i++) { currentCombatantPositions[currentTurnBlock[i].transform.position] = currentTurnBlock[i]; }
+                for (int i = 0; i < nextList.Count; i++) { currentCombatantPositions[nextList[i].transform.position] = nextList[i]; }
             }
+
         }
 
-        //Vector3 velocity = Vector3.zero;
         if (state == CombatSceneState.DampingCamera)
         {
+            //smoothly damps the camera to its new position
             camera.transform.position = Vector3.SmoothDamp(camera.transform.position, cameraMoveEnd, ref dampVelocity, .5f);
-            //camera.transform.position = Vector3.Lerp(cameraMoveStart, cameraMoveEnd, lerpTime);
+            //prevents velocity from becoming too low
+            if (dampVelocity.magnitude < .5f) { dampVelocity *= 15; }
 
-            //Debug.Log("camera.transform.position : (" + camera.transform.position.x +", " + camera.transform.position.y + ", " + camera.transform.position.z + ")"
-              //  + "cameraMoveEnd : (" + cameraMoveEnd.x + ", " + cameraMoveEnd.y + ", " + cameraMoveEnd.z + ")");
-
-            float deltaX = System.Math.Abs(camera.transform.position.x - cameraMoveEnd.x);
-            float deltaY = System.Math.Abs(camera.transform.position.y - cameraMoveEnd.y);
-            Debug.Log("Delta x : " + deltaX + " Delta y : " + deltaY + " Velocity : " + dampVelocity);
-
+            //float deltaX = System.Math.Abs(camera.transform.position.x - cameraMoveEnd.x);
+            //float deltaY = System.Math.Abs(camera.transform.position.y - cameraMoveEnd.y);
+            //Debug.Log("Delta x : " + deltaX + " Delta y : " + deltaY + " Velocity : " + dampVelocity.magnitude);
             //camera.transform.position = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y)
 
-            //if(camera.transform.position == cameraMoveEnd)
-            if (deltaX <= .4f && deltaY <= .4f)
+            if (camera.transform.position == cameraMoveEnd)
+            //if (deltaX <= .4f && deltaY <= .4f)
             {
-                //camera.transform.position = cameraMoveEnd;
+                camera.transform.position = cameraMoveEnd;
                 currentTurnBlock[0].BeginTurn();
                 state = CombatSceneState.Combat;
             }
@@ -167,30 +157,40 @@ public class CombatSceneController : MonoBehaviour
 
         if (state == CombatSceneState.CameraMode)
         {
+            //gets input for moving the camera
             Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
             cameraMoveStart = camera.transform.position;
             cameraMoveEnd = new Vector3(camera.transform.position.x + System.Math.Sign(input.x), camera.transform.position.y + System.Math.Sign(input.y), -10);
             lerpTime = 0f;
 
-            state = CombatSceneState.MovingCamera;
+            //sets camera to lerp
+            if (cameraMoveEnd != cameraMoveStart) { state = CombatSceneState.MovingCamera; }
         }
 
-        if(state == CombatSceneState.MovingCamera)
+        if (state == CombatSceneState.MovingCamera)
         {
+            //smoothly moves camera to destination
             lerpTime += Time.deltaTime * 5;
             camera.transform.position = Vector3.Lerp(cameraMoveStart, cameraMoveEnd, lerpTime);
 
-            if(lerpTime >= 1f)
+            //return to camera mode after moving
+            if (lerpTime >= 1f)
             {
                 state = CombatSceneState.CameraMode;
+
+                Vector3 normalizedCameraPos = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y);
+                if (currentCombatantPositions.ContainsKey(normalizedCameraPos))
+                {
+                    Debug.Log("Found one!");
+                }
             }
         }
 
-        else if(state == CombatSceneState.ClosingDialogue)
+        else if (state == CombatSceneState.ClosingDialogue)
         {
             // TODO
         }
-	}
+    }
 
 
 
@@ -219,7 +219,7 @@ public class CombatSceneController : MonoBehaviour
         //adds all playable character to nextList and goodGuys
         if (party.Count != 0)
         {
-            for(int i = 0; i < party.Count; i++)
+            for (int i = 0; i < party.Count; i++)
             {
                 nextList.Add(party[i]);
                 goodGuys.Add(party[i]);
@@ -227,13 +227,6 @@ public class CombatSceneController : MonoBehaviour
         }
 
         ////add enemies to nextList and runs their targeting set up
-        //enemies = (from GameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
-        //for (int i = 0; i < enemies.Count; i++)
-        //{
-        //    enemies[i].CreateTargetList();
-        //    nextList.Add(enemies[i]);
-        //}
-        //adds enemies to charList
         enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
         foreach (Enemy enemy in enemies)
         {
@@ -263,17 +256,17 @@ public class CombatSceneController : MonoBehaviour
     /// </summary>
     private void SortLists()
     {
-        if(nextList.Count > 0 && nextList[0] is PlayerCharacter)
+        if (nextList.Count > 0 && nextList[0] is PlayerCharacter)
         {
-            while(nextList.Count > 0 && nextList[0] is PlayerCharacter)
+            while (nextList.Count > 0 && nextList[0] is PlayerCharacter)
             {
                 currentTurnBlock.Add(nextList[0]);
                 nextList.RemoveAt(0);
             }
         }
-        else if(nextList.Count > 0 && nextList[0] is Enemy)
+        else if (nextList.Count > 0 && nextList[0] is Enemy)
         {
-            while(nextList.Count > 0 && nextList[0] is Enemy)
+            while (nextList.Count > 0 && nextList[0] is Enemy)
             {
                 currentTurnBlock.Add(nextList[0]);
                 nextList.RemoveAt(0);
