@@ -8,6 +8,8 @@ public class CombatSceneController : MonoBehaviour
 {
     private CombatSceneState state;
 
+    private OverlayCanvas overlayCanvas;
+
     private Canvas worldCanvas;
     private Camera camera;
     private Dictionary<Vector3, CombatChar> currentCombatantPositions;
@@ -74,6 +76,32 @@ public class CombatSceneController : MonoBehaviour
             // TODO
         }
 
+        //switches into free movement of camera for character analysis
+        else if (Input.GetKeyDown(KeyCode.C) && currentTurnBlock[0] is PlayerCharacter && (state == CombatSceneState.Combat || state == CombatSceneState.CameraMode))
+        {
+            if (state != CombatSceneState.CameraMode)
+            {
+                currentTurnBlock[0].FinishedTurn = true;
+                state = CombatSceneState.CameraMode;
+
+                //stores the positions of the combatants at the current time
+                currentCombatantPositions.Clear();
+                for (int i = 0; i < finishedList.Count; i++) { currentCombatantPositions[finishedList[i].transform.position] = finishedList[i]; }
+                for (int i = 0; i < currentTurnBlock.Count; i++) { currentCombatantPositions[currentTurnBlock[i].transform.position] = currentTurnBlock[i]; }
+                for (int i = 0; i < nextList.Count; i++) { currentCombatantPositions[nextList[i].transform.position] = nextList[i]; }
+            }
+            else
+            {
+                overlayCanvas.HideUI();
+
+                state = CombatSceneState.DampingCamera;
+                state = CombatSceneState.DampingCamera;
+                cameraMoveEnd = currentTurnBlock[0].transform.position;
+                cameraMoveEnd.z = -10;
+                dampVelocity = Vector3.zero;
+            }
+        }
+
         else if (state == CombatSceneState.Combat)
         {
             if (currentTurnBlock[0].FinishedTurn)
@@ -118,19 +146,6 @@ public class CombatSceneController : MonoBehaviour
                 cameraMoveEnd.z = -10;
                 dampVelocity = Vector3.zero;
             }
-            //switches into free movement of camera for character analysis
-            else if (Input.GetKeyDown(KeyCode.C) && currentTurnBlock[0] is PlayerCharacter)
-            {
-                currentTurnBlock[0].FinishedTurn = true;
-                state = CombatSceneState.CameraMode;
-
-                //stores the positions of the combatants at the current time
-                currentCombatantPositions.Clear();
-                for (int i = 0; i < finishedList.Count; i++) { currentCombatantPositions[finishedList[i].transform.position] = finishedList[i]; }
-                for (int i = 0; i < currentTurnBlock.Count; i++) { currentCombatantPositions[currentTurnBlock[i].transform.position] = currentTurnBlock[i]; }
-                for (int i = 0; i < nextList.Count; i++) { currentCombatantPositions[nextList[i].transform.position] = nextList[i]; }
-            }
-
         }
 
         if (state == CombatSceneState.DampingCamera)
@@ -182,6 +197,11 @@ public class CombatSceneController : MonoBehaviour
                 if (currentCombatantPositions.ContainsKey(normalizedCameraPos))
                 {
                     Debug.Log("Found one!");
+                    overlayCanvas.InspectCharacter(currentCombatantPositions[normalizedCameraPos]);
+                }
+                else
+                {
+                    overlayCanvas.HideUI();
                 }
             }
         }
@@ -201,6 +221,8 @@ public class CombatSceneController : MonoBehaviour
     /// <param name="party"></param>
     public void StartScene(List<PlayerCharacter> party)
     {
+        overlayCanvas = GameObject.FindGameObjectWithTag("OverlayCanvas").GetComponent<OverlayCanvas>();
+
         //set up the move cost matrix based on walls and the size of the map
         moveCosts = new float[(int)topRightCorner.x + 1, (int)TopRightCorner.y + 1];
         for (int i = 0; i < moveCosts.GetLength(0); i++)

@@ -13,6 +13,11 @@ public abstract class CombatChar : MonoBehaviour
     public event MoveEventHandler OnMove;
 
     /// <summary>
+    /// Get's character's current level
+    /// </summary>
+    public abstract int Level { get; }
+
+    /// <summary>
     /// Character's current health
     /// </summary>
     public abstract int Health { get; }

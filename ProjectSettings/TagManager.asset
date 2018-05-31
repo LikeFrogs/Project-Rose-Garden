@@ -11,6 +11,7 @@ TagManager:
   - Canvas
   - EventSystem
   - SelectionIcon
+  - OverlayCanvas
   layers:
   - Default
   - TransparentFX

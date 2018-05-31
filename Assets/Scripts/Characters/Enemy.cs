@@ -17,18 +17,30 @@ public enum EnemyStatus { Patrolling, Searching, Attacking, Hunting, Deciding }
 public class Enemy : CombatChar
 {
     #region Stats fields and properties
+    protected int level;
+    [SerializeField] protected int expForKill;
+
     protected int health;
-    [SerializeField] int maxHealth;
+    [SerializeField] protected int maxHealth;
     protected int mutationPoints;
-    [SerializeField] int maxMutationPoints;
+    [SerializeField] protected int maxMutationPoints;
     protected int speed;
-    [SerializeField] int maxSpeed;
-    [SerializeField] int attack;
-    [SerializeField] int magicAttack;
-    [SerializeField] int defense;
-    [SerializeField] int resistance;
-    [SerializeField] int initiative;
-    [SerializeField] int attackRange;
+    [SerializeField] protected int maxSpeed;
+    [SerializeField] protected int attack;
+    [SerializeField] protected int magicAttack;
+    [SerializeField] protected int defense;
+    [SerializeField] protected int resistance;
+    [SerializeField] protected int initiative;
+    [SerializeField] protected int attackRange;
+
+    /// <summary>
+    ///  Character's current level
+    /// </summary>
+    public override int Level { get { return level; } }
+    /// <summary>
+    /// The amount of exp a character earns for killing this enemy
+    /// </summary>
+    public int ExpForKill { get { return expForKill; } }
 
     /// <summary>
     /// Gets character's current health

@@ -12,6 +12,15 @@ public class NewTestClass : PlayerCharacter
     protected List<string> spellList;
 
     /// <summary>
+    /// Gets character's current level
+    /// </summary>
+    public override int Level { get { return level; } }
+    /// <summary>
+    /// Gets character's current exp total
+    /// </summary>
+    public override int TotalExp { get { return totalExp; } }
+
+    /// <summary>
     /// Gets character's current health
     /// </summary>
     public override int Health
@@ -346,7 +355,6 @@ public class NewTestClass : PlayerCharacter
         selectedIcon.GetComponent<RectTransform>().sizeDelta = new Vector2(.5f, .5f);
 
         classStatus = NewTestClassStatus.Targeting;
-
     }
 
     /// <summary>
@@ -359,13 +367,29 @@ public class NewTestClass : PlayerCharacter
         Destroy(selectedIcon);
 
         //gets the enemy whose position matches the currently selected square
-        CombatChar target = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
+        Enemy target = (Enemy)(from gameObject in GameObject.FindGameObjectsWithTag("Enemy") where gameObject.transform.position == selectedPosition select gameObject).ToList()[0].GetComponent<CombatChar>();
 
         //calculates damage to apply and calls TakeDamage()
         int damage = attack + rangedWeapon.Damage - target.Defense; //fix this calculation
         rangedWeapon.Ammo -= 1;
+
+        int exp = target.ExpForKill;
+
         target.BeginTakeDamage(damage);
         while (target.TakingDamage) { yield return null; }
+
+        yield return null;
+
+        if(target == null || target.Health == 0)
+        {
+            totalExp += exp;
+        }
+        else
+        {
+            //exp for attack?
+        }
+
+        LevelUp();
 
         //finishes the turn
         End();
@@ -379,6 +403,10 @@ public class NewTestClass : PlayerCharacter
     /// </summary>
     protected override void LevelUp()
     {
-
+        if(totalExp >= 10 && level < 2)
+        {
+            level = 2;
+            Debug.Log("You leveled up!");
+        }
     }
 }

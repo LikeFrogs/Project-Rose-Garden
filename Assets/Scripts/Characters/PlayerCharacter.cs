@@ -10,6 +10,9 @@ public enum Status { MovePhase, Moving, ActionMenu, WaitingForSubclass, None }
 public abstract class PlayerCharacter : CombatChar
 {
     #region Stats fields and properties
+    protected int level;
+    protected int totalExp;
+
     protected int health;
     protected int maxHealth;
     protected int mutationPoints;
@@ -22,6 +25,14 @@ public abstract class PlayerCharacter : CombatChar
     protected int initiative;
     protected int resistance;
 
+    /// <summary>
+    /// Character's current level
+    /// </summary>
+    public abstract override int Level { get; }
+    /// <summary>
+    /// Character's current exp total
+    /// </summary>
+    public abstract int TotalExp { get; }
 
     /// <summary>
     /// Character's current health
@@ -214,13 +225,14 @@ public abstract class PlayerCharacter : CombatChar
                 if (transform.position != startingPosition)
                 {
                     //calculate move range
-                    //float[,] moveCosts = CombatSceneController.MoveCosts;
                     float[,] moveCosts = CombatSceneController.MoveCosts;
-                    //List<Enemy> enemies = CombatSceneController.Enemies;
                     List<Enemy> enemies = CombatSceneController.Enemies;
                     for (int i = 0; i < enemies.Count; i++)
                     {
-                        moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+                        if (enemies[i] != null)
+                        { 
+                            moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+                        }
                     }
                     takenPath.AddRange(AStarNode.FindPath(moveStart, moveEnd, moveCosts));
                     //if the player's custom path is too long, recalculate it to the shortest path
@@ -236,8 +248,10 @@ public abstract class PlayerCharacter : CombatChar
     /// <summary>
     /// Sets up the stats of this character. Should only be called at character creation.
     /// </summary>
-    public void Init(int maxHealth, int maxSpeed, int attack, int magicAttack, int defense, int resistance)
+    public void Init(int maxHealth, int maxSpeed, int attack, int magicAttack, int defense, int resistance, int level = 1)
     {
+        this.level = level;
+
         status = Status.None;
 
         this.health = maxHealth;
@@ -357,7 +371,11 @@ public abstract class PlayerCharacter : CombatChar
         List<Enemy> enemies = CombatSceneController.Enemies;
         for (int i = 0; i < enemies.Count; i++)
         {
-            moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+            if (enemies[i] != null)
+            {
+                moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
+            }
+
         }
         moveRange.Clear();
         moveRange.AddRange(DijkstraNode.MoveRange(transform.position, speed, moveCosts));
@@ -515,82 +533,7 @@ public abstract class PlayerCharacter : CombatChar
 
         yield break;
     }
-
-    ///// <summary>
-    ///// Smoothly moves the player from their current position to a position one tile in the direction of input
-    ///// </summary>
-    ///// <param name="input">The target position to move to</param>
-    //private IEnumerator Move(Vector2 input)
-    //{
-    //    //while running this routine no new input is accepted
-    //    status = Status.Moving;
-
-    //    Vector3 startPos = transform.position;
-    //    float t = 0; //time
-    //    //this vector equals the player's original position + 1 in the direction they are moving
-    //    Vector3 endPos = new Vector3(startPos.x + System.Math.Sign(input.x), startPos.y + System.Math.Sign(input.y));
-
-    //    float moveSpeed = 5;
-    //    if (input.x != 0 && input.y != 0)//diagonal movement needs to take longer
-    //    {
-    //        moveSpeed = 3.5f;
-    //    }
-
-    //    //prevents players from moving into unreachable squares
-    //    if (!moveRange.Contains(endPos))
-    //    {
-    //        t = 1f;
-    //    }
-
-    //    //smoothly moves the player across the distance with lerp
-    //    while (t < 1f)
-    //    {
-    //        t += Time.deltaTime * moveSpeed;
-    //        transform.position = Vector3.Lerp(startPos, endPos, t);
-    //        yield return null;
-    //    }
-
-    //    //highlights all enemies targetable from this space
-    //    DrawTargets();
-
-    //    //keeps track of the character's movement
-    //    if (transform.position == endPos && endPos != startPos)
-    //    {
-    //        //calculate move range
-    //        float[,] moveCosts = CombatSceneController.MoveCosts;
-    //        List<Enemy> enemies = CombatSceneController.Enemies;
-    //        for (int i = 0; i < enemies.Count; i++)
-    //        {
-    //            moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
-    //        }
-    //        takenPath.AddRange(AStarNode.FindPath(startPos, endPos, moveCosts));
-    //        //if the player's custom path is too long, recalculate it to the shortest path
-    //        if (takenPath.Count > speed)
-    //        {
-    //            takenPath = AStarNode.FindPath(startingPosition, endPos, moveCosts);
-    //        }
-    //    }
-    //    else if (transform.position == endPos && endPos == startPos) { takenPath.Clear(); }
-    //    //if(endPos == startingPosition)
-    //    //{
-    //    //    takenPath.Clear();
-    //    //}
-
-    //    //**************************************************************Update this to actual graphical drawing of the path (this is currently in update because Debug)
-    //    //if (takenPath.Count > 0)
-    //    //{
-    //    //    Debug.DrawLine(startingPosition, takenPath[0]);
-
-    //    //    for(int i = 1; i < takenPath.Count; i++)
-    //    //    {
-    //    //        Debug.DrawLine(takenPath[i - 1], takenPath[i]);
-    //    //    }
-    //    //}
-
-    //    //when done moving allow more input to be received
-    //    status = Status.MovePhase;
-    //}
-
+    
     /// <summary>
     /// highlights all enemies targetable from this space
     /// </summary>
