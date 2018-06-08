@@ -10,6 +10,7 @@ using System.Linq;
 using System.Diagnostics;
 
 public enum EnemyStatus { Patrolling, Searching, Attacking, Hunting, Deciding }
+public enum WorkingStatus { WaitingOnCoroutine, Moving, Turning }
 
 /// <summary>
 /// NPC combat participants
@@ -129,6 +130,23 @@ public class Enemy : CombatChar
     #endregion
 
     #region Fields and properties for game flow
+    protected WorkingStatus workingStatus;
+
+    protected Vector3 moveStart;
+    protected Vector3 moveEnd;
+    protected float lerpTime;
+
+    protected int startAngle;
+    protected int goalAngle;
+
+
+
+
+
+
+
+
+
     //target tracking
     protected Dictionary<CombatChar, Vector3> lastKnowPositions;
     protected List<CombatChar> targets;
@@ -140,15 +158,19 @@ public class Enemy : CombatChar
     protected List<GameObject> unusedSightConeIndicators;
     protected Dictionary<Vector3, GameObject> sightConeIndicators;
     protected GameObject canvas;
-    //search related
-    SearchZone currentSearchArea;
-    List<List<Vector3>> positionsToSearch;
-    [SerializeField] List<GameObject> searchZoneList;
-    protected Dictionary<SearchZone, bool> searchZones;
-    protected int speedRemaining;
+
     //patrol related
     [SerializeField] List<Vector3> patrolPositions;
     protected int patrolPositionIndex;
+
+    //search related
+    SearchZone currentSearchArea;
+    List<List<Vector3>> positionsToSearch;
+    Vector3 searchTarget;
+    [SerializeField] List<GameObject> searchZoneList;
+    protected Dictionary<SearchZone, bool> searchZones;
+    protected int speedRemaining;
+    
     //general control stuff
     protected bool isMoving;
     protected bool isTurning;
@@ -188,6 +210,10 @@ public class Enemy : CombatChar
     // Use this for initialization
     protected void Awake()
     {
+        searchTarget.x = -1;
+
+        positionsToSearch = new List<List<Vector3>>();
+
         lastKnowPositions = new Dictionary<CombatChar, Vector3>();
 
         currentlySeenTargets = new List<CombatChar>();
@@ -240,6 +266,41 @@ public class Enemy : CombatChar
         }
     }
 
+    protected virtual void Update()
+    {
+        //moves the enemy smoothly to its target position
+        if (workingStatus == WorkingStatus.Moving)
+        {
+            lerpTime += Time.deltaTime * 5;
+            transform.position = Vector3.Lerp(moveStart, moveEnd, lerpTime);
+
+            if (lerpTime >= 1f)
+            {
+                CalculateVisionCone();
+
+                workingStatus = WorkingStatus.WaitingOnCoroutine;
+            }
+        }
+
+        //turns the enemy smoothly towards its target direction
+        if(workingStatus == WorkingStatus.Turning)
+        {
+            lerpTime += Time.deltaTime * 1.5f;
+            currentFacingAngle = (int)Mathf.Lerp(startAngle, goalAngle, lerpTime);
+            CalculateVisionCone();
+
+            if(lerpTime >= 1f)
+            {
+                //ensures that the final facing angles are exact
+                currentFacingAngle = goalAngle;
+                while(currentFacingAngle < 0) { currentFacingAngle += 360; }
+                while(currentFacingAngle >= 360) { currentFacingAngle -= 360; }
+
+                workingStatus = WorkingStatus.WaitingOnCoroutine;
+            }
+        }
+    }
+
     /// <summary>
     /// Stores all possible targets in a list (playable characters and their allies)
     /// </summary>
@@ -267,23 +328,39 @@ public class Enemy : CombatChar
     {
         finishedTurn = false;
 
-        speedRemaining = speed;
+        speedRemaining = speed; //recalculate for slowing effects if necessary
         CalculateVisionCone();
 
         //if(currentlySeenTargets.Count == 0 && lastKnowPositions.Count > 0) { status = EnemyStatus.Hunting; }
 
+        //Finished
         if (status == EnemyStatus.Patrolling)
         {
             StartCoroutine(Patrol());
         }
+
+
+
+        //Unfinished
         else if(status == EnemyStatus.Searching)
         {
             StartCoroutine(Search());
         }
+
+
+
+
+
+
+
+
+
+        //Unfinished
         else if(status == EnemyStatus.Attacking)
         {
             StartCoroutine(TargetSighted());
         }
+        //Unfinished
         else if(status == EnemyStatus.Deciding)
         {
             ChooseAttackAlgorithm();
@@ -291,16 +368,12 @@ public class Enemy : CombatChar
         //******************************************************************Possibly some kind of special hunt routine for right after losing sight of a target?
     }
 
+    //***Correctly Refactored!
     /// <summary>
     /// Handles the entire turn for this enemy
     /// </summary>
     protected IEnumerator Patrol()
     {
-        //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
-        finishedTurn = false;
-
-        CalculateVisionCone();
-
         //keep up with the position that the character will move to next and
         //start its next turn in (assuming nothing happens to change the character's state
         patrolPositionIndex++;
@@ -328,20 +401,98 @@ public class Enemy : CombatChar
             {
                 if (speedRemaining > 0)
                 {
-                    StartCoroutine(Move(position));
+                    //check to see if turning is necessary
+                    if (position.x == transform.position.x - 1 && currentFacingAngle != 180)
+                    {
+                        StartTurning(180);
+                    }
+                    else if (position.x == transform.position.x + 1 && currentFacingAngle != 0)
+                    {
+                        StartTurning(0);
+                    }
+                    else if (position.y == transform.position.y - 1 && currentFacingAngle != 270)
+                    {
+                        StartTurning(270);
+                    }
+                    else if (position.y == transform.position.y + 1 && currentFacingAngle != 90)
+                    {
+                        StartTurning(90);
+                    }
+                    //wait while turning
+                    while (workingStatus == WorkingStatus.Turning) { yield return null; }
+
+                    //set the movement destination
+                    moveStart = transform.position;
+                    moveEnd = position;
+                    lerpTime = 0f;
+                    workingStatus = WorkingStatus.Moving;
                     //wait until finished moving
-                    while (isMoving) { yield return null; }
+                    while (workingStatus == WorkingStatus.Moving) { yield return null; }
                     speedRemaining--;
                 }
             }
         }
 
-
-        CalculateVisionCone();
-
         //this will cause the turn manager to begin the next turn
         finishedTurn = true;
     }
+
+
+    protected void StartTurning(int targetDirection)
+    {
+        //normalize angles and numerically determine which direction to turn
+        startAngle = currentFacingAngle;
+        while (startAngle > 360) { startAngle -= 360; }
+        while (startAngle < 0) { startAngle += 360; }
+        goalAngle = targetDirection;
+        int difference = goalAngle - startAngle;
+        if (difference < 0) { difference += 360; }
+        if (difference <= 180)
+        {
+            //left
+            int degrees = goalAngle;
+            degrees -= startAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle + degrees;
+        }
+        else
+        {
+            //right
+            int degrees = startAngle;
+            degrees -= goalAngle;
+            if (degrees < 0) { degrees += 360; }
+
+            goalAngle = startAngle - degrees;
+        }
+
+        lerpTime = 0;
+        workingStatus = WorkingStatus.Turning;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     //******************************Possibly intelligently select one search zone that the target wouldn't be in (the enemy was just there/saw the target run the other way/etc.)
     /// <summary>
@@ -349,14 +500,7 @@ public class Enemy : CombatChar
     /// </summary>
     protected IEnumerator Search()
     {
-        //the finishedTurn variable tells the turn handler to wait until TakeTurn() completes before starting the next turn
-        finishedTurn = false;
-
-        CalculateVisionCone();
-
-        //float[,] moveCosts = CombatSceneController.MoveCosts;
         float[,] moveCosts = CombatSceneController.MoveCosts;
-        //List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
         List<CombatChar> goodGuys = CombatSceneController.GoodGuys;
         for (int i = 0; i < goodGuys.Count; i++)
         {
@@ -369,7 +513,7 @@ public class Enemy : CombatChar
             int shortestDistance = int.MaxValue;
             foreach (KeyValuePair<SearchZone, bool> searchZone in searchZones)
             {
- 
+
                 int pathDistance = AStarNode.PathDistance(transform.position, searchZone.Key.transform.position, moveCosts);
                 if (searchZone.Value == false && pathDistance <= shortestDistance)
                 {
@@ -377,55 +521,58 @@ public class Enemy : CombatChar
                     currentSearchArea = searchZone.Key;
                 }
             }
-            positionsToSearch = new List<List<Vector3>>(currentSearchArea.KeyPositionLists);
+
+            positionsToSearch.Clear();
+            positionsToSearch.AddRange(currentSearchArea.KeyPositionLists);
         }
 
-        //create a list of all reachable positions in the current search zone
         List<Vector3> reachablePositions = new List<Vector3>();
-        for (int i = 0; i < positionsToSearch.Count; i++)
-        {
-            for (int j = 0; j < positionsToSearch[i].Count; j++)
-            {
-                if(i >= positionsToSearch.Count || j >= positionsToSearch[i].Count)
-                {
-                    UnityEngine.Debug.Log("a;ldkfjas;ldkfja;sldkjf;alsdjf;lasdkjf;lasdkjf;lasdjf;laskdjf;lasjdf;lajsdf;ljasd;lfkja;lsksd");
-                }
-
-
-                if (AStarNode.CheckSquare(transform.position, positionsToSearch[i][j], moveCosts, speed))
-                {
-                    reachablePositions.Add(positionsToSearch[i][j]);
-                }
-            }
-        }
-
-        //finds the path with the shortest distance and chooses that one as the path to follow
-        if(reachablePositions.Count == 0)
-        {
-            int index = 0;
-            int shortestDistance = int.MaxValue;
-
-            for (int i = 0; i < positionsToSearch.Count; i++)
+        if (searchTarget.x == -1)
+        { 
+            //create a list of all reachable positions in the current search zone
+           for (int i = 0; i < positionsToSearch.Count; i++)
             {
                 for (int j = 0; j < positionsToSearch[i].Count; j++)
                 {
-                    int pathDistance = AStarNode.PathDistance(transform.position, positionsToSearch[i][j], CombatSceneController.MoveCosts);
-                    if (pathDistance < shortestDistance)
+                    if (AStarNode.CheckSquare(transform.position, positionsToSearch[i][j], moveCosts, speed))
                     {
-                        shortestDistance = pathDistance;
-                        index = i;
+                        reachablePositions.Add(positionsToSearch[i][j]);
                     }
                 }
             }
-            reachablePositions.AddRange(positionsToSearch[index]);
+
+            //finds the path with the shortest distance and chooses that one as the path to follow
+            if (reachablePositions.Count == 0)
+            {
+                int index = 0;
+                int shortestDistance = int.MaxValue;
+
+                for (int i = 0; i < positionsToSearch.Count; i++)
+                {
+                    for (int j = 0; j < positionsToSearch[i].Count; j++)
+                    {
+                        int pathDistance = AStarNode.PathDistance(transform.position, positionsToSearch[i][j], CombatSceneController.MoveCosts);
+                        if (pathDistance < shortestDistance)
+                        {
+                            shortestDistance = pathDistance;
+                            index = i;
+                        }
+                    }
+                }
+                reachablePositions.AddRange(positionsToSearch[index]);
+            }
+
+            searchTarget = reachablePositions[(new System.Random()).Next(reachablePositions.Count)];
         }
 
         //if the enemy can reach one of the positions that needs to be searched it will do so this turn
-        if (reachablePositions.Count > 0)
-        {
-            int index = (new System.Random()).Next(reachablePositions.Count);
+        //if (reachablePositions.Count > 0)
+        //{
+            
+            List<Vector3> path = AStarNode.FindPath(transform.position, searchTarget, moveCosts);
 
-            List<Vector3> path = AStarNode.FindPath(transform.position, reachablePositions[index], moveCosts);
+            //int index = (new System.Random()).Next(reachablePositions.Count);
+            //List<Vector3> path = AStarNode.FindPath(transform.position, reachablePositions[index], moveCosts);
 
             if (path != null)
             {
@@ -433,14 +580,39 @@ public class Enemy : CombatChar
                 {
                     if (speedRemaining > 0)
                     {
-                        StartCoroutine(Move(position));
+                        //check to see if turning is necessary
+                        if (position.x == transform.position.x - 1 && currentFacingAngle != 180)
+                        {
+                            StartTurning(180);
+                        }
+                        else if (position.x == transform.position.x + 1 && currentFacingAngle != 0)
+                        {
+                            StartTurning(0);
+                        }
+                        else if (position.y == transform.position.y - 1 && currentFacingAngle != 270)
+                        {
+                            StartTurning(270);
+                        }
+                        else if (position.y == transform.position.y + 1 && currentFacingAngle != 90)
+                        {
+                            StartTurning(90);
+                        }
+                        //wait while turning
+                        while (workingStatus == WorkingStatus.Turning) { yield return null; }
+
+                        //set the movement destination
+                        moveStart = transform.position;
+                        moveEnd = position;
+                        lerpTime = 0f;
+                        workingStatus = WorkingStatus.Moving;
                         //wait until finished moving
-                        while (isMoving) { yield return null; }
+                        while (workingStatus == WorkingStatus.Moving) { yield return null; }
                         speedRemaining--;
-                    }
+                    }                    
                 }
+                if(reachablePositions.Count == 1) { searchTarget.x = -1; }
             }
-        }
+        //}
              
         //removes the list of positions that has been searched
         //and causes enemy to look around in current position
@@ -456,6 +628,9 @@ public class Enemy : CombatChar
 
                     StartCoroutine(LookAround(45));
                     while (isTurning) { yield return null; }
+
+
+                    searchTarget.x = -1;
                 }
             }
         }

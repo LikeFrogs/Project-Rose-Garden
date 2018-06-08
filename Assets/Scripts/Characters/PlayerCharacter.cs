@@ -192,8 +192,6 @@ public abstract class PlayerCharacter : CombatChar
                     lerpTime = 0f;
 
                     status = Status.Moving;
-
-                    //StartCoroutine(Move(input));
                 }
 
             }
