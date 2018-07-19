@@ -10,6 +10,10 @@ public class CombatSceneController : MonoBehaviour
 
     private OverlayCanvas overlayCanvas;
 
+
+    private GameObject inspectionReticule;
+
+
     private Canvas worldCanvas;
     private Camera camera;
     private Dictionary<Vector3, CombatChar> currentCombatantPositions;
@@ -66,6 +70,10 @@ public class CombatSceneController : MonoBehaviour
 
         worldCanvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
         worldCanvas.GetComponent<RectTransform>().sizeDelta = topRightCorner;
+
+        inspectionReticule = Instantiate(GameController.SelectedPrefab);
+        inspectionReticule.SetActive(false);
+        inspectionReticule.transform.SetParent(worldCanvas.transform);
     }
 
     // Update is called once per frame
@@ -77,7 +85,7 @@ public class CombatSceneController : MonoBehaviour
         }
 
         //switches into free movement of camera for character analysis
-        else if (Input.GetKeyDown(KeyCode.C) && currentTurnBlock[0] is PlayerCharacter && (state == CombatSceneState.Combat || state == CombatSceneState.CameraMode))
+        if (Input.GetKeyDown(KeyCode.C) && currentTurnBlock[0] is PlayerCharacter && (state == CombatSceneState.Combat || state == CombatSceneState.CameraMode))
         {
             if (state != CombatSceneState.CameraMode)
             {
@@ -89,6 +97,22 @@ public class CombatSceneController : MonoBehaviour
                 for (int i = 0; i < finishedList.Count; i++) { currentCombatantPositions[finishedList[i].transform.position] = finishedList[i]; }
                 for (int i = 0; i < currentTurnBlock.Count; i++) { currentCombatantPositions[currentTurnBlock[i].transform.position] = currentTurnBlock[i]; }
                 for (int i = 0; i < nextList.Count; i++) { currentCombatantPositions[nextList[i].transform.position] = nextList[i]; }
+
+                //draw what camera is currently looking at
+                inspectionReticule.SetActive(true);
+                inspectionReticule.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(.5f, .5f);
+                inspectionReticule.transform.GetComponent<RectTransform>().anchoredPosition = camera.transform.position;
+
+                //display ui for the current character (will already be under camera)
+                Vector3 normalizedCameraPos = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y);
+                if (currentCombatantPositions.ContainsKey(normalizedCameraPos))
+                {
+                    overlayCanvas.InspectCharacter(currentCombatantPositions[normalizedCameraPos]);
+                }
+                else
+                {
+                    overlayCanvas.HideUI();
+                }
             }
             else
             {
@@ -99,6 +123,9 @@ public class CombatSceneController : MonoBehaviour
                 cameraMoveEnd = currentTurnBlock[0].transform.position;
                 cameraMoveEnd.z = -10;
                 dampVelocity = Vector3.zero;
+
+
+                inspectionReticule.SetActive(false);
             }
         }
 
@@ -170,6 +197,9 @@ public class CombatSceneController : MonoBehaviour
         }
 
 
+
+
+
         if (state == CombatSceneState.CameraMode)
         {
             //gets input for moving the camera
@@ -188,15 +218,16 @@ public class CombatSceneController : MonoBehaviour
             lerpTime += Time.deltaTime * 5;
             camera.transform.position = Vector3.Lerp(cameraMoveStart, cameraMoveEnd, lerpTime);
 
+            inspectionReticule.GetComponent<RectTransform>().anchoredPosition = camera.transform.position;
+
             //return to camera mode after moving
             if (lerpTime >= 1f)
             {
                 state = CombatSceneState.CameraMode;
-
+                              
                 Vector3 normalizedCameraPos = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y);
                 if (currentCombatantPositions.ContainsKey(normalizedCameraPos))
                 {
-                    Debug.Log("Found one!");
                     overlayCanvas.InspectCharacter(currentCombatantPositions[normalizedCameraPos]);
                 }
                 else
@@ -206,7 +237,7 @@ public class CombatSceneController : MonoBehaviour
             }
         }
 
-        else if (state == CombatSceneState.ClosingDialogue)
+        if (state == CombatSceneState.ClosingDialogue)
         {
             // TODO
         }

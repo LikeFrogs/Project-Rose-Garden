@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2017
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rose_Garden", "Rose_Garden.csproj", "{EFD697D5-A7B1-2618-0569-C5A7A384C473}"
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rose_Garden", "Assembly-CSharp.csproj", "{80448EB7-4668-E6D8-182A-6873AF1E4682}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,10 +9,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EFD697D5-A7B1-2618-0569-C5A7A384C473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EFD697D5-A7B1-2618-0569-C5A7A384C473}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EFD697D5-A7B1-2618-0569-C5A7A384C473}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EFD697D5-A7B1-2618-0569-C5A7A384C473}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80448EB7-4668-E6D8-182A-6873AF1E4682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80448EB7-4668-E6D8-182A-6873AF1E4682}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80448EB7-4668-E6D8-182A-6873AF1E4682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80448EB7-4668-E6D8-182A-6873AF1E4682}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

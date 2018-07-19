@@ -9311,7 +9311,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &244244573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9339,7 +9339,7 @@ MonoBehaviour:
   searchZoneList:
   - {fileID: 97140308}
   - {fileID: 551760181}
-  status: 0
+  status: 1
   visionRange: 7
   currentFacingAngle: 0
   visionAngle: 80
@@ -18258,7 +18258,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &580568212
 Transform:
   m_ObjectHideFlags: 0
@@ -18299,7 +18299,7 @@ MonoBehaviour:
   searchZoneList:
   - {fileID: 1113475636}
   - {fileID: 551760181}
-  status: 0
+  status: 1
   visionRange: 7
   currentFacingAngle: 270
   visionAngle: 80
@@ -29086,7 +29086,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 0.3584906, g: 0.15787104, b: 0.06594875, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
