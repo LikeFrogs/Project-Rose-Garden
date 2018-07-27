@@ -149,7 +149,7 @@ public abstract class PlayerCharacter : CombatChar
         //******************************TEMP
         if (takenPath.Count > 0)
         {
-            Debug.DrawLine(startingPosition, takenPath[0]);
+            //Debug.DrawLine(startingPosition, takenPath[0]);
 
             for (int i = 1; i < takenPath.Count; i++)
             {
@@ -232,12 +232,40 @@ public abstract class PlayerCharacter : CombatChar
                             moveCosts[(int)enemies[i].transform.position.x, (int)enemies[i].transform.position.y] = 0;
                         }
                     }
-                    takenPath.AddRange(AStarNode.FindPath(moveStart, moveEnd, moveCosts));
-                    //if the player's custom path is too long, recalculate it to the shortest path
-                    if (takenPath.Count > speed)
+
+                    //if the player moves back into a space they have already traversed,
+                    //reduce takenPath to only be the path to that square
+                    if(takenPath.Contains(moveEnd))
                     {
-                        takenPath = AStarNode.FindPath(startingPosition, moveEnd, moveCosts);
+                        for(int i = takenPath.Count - 1; i >= 0; i--)
+                        {
+                            if(takenPath[i] == moveEnd)
+                            {
+                                i = -1;
+                            }
+                            else
+                            {
+                                takenPath.RemoveAt(i);
+                            }
+                        }
                     }
+                    else
+                    {
+                        if (!takenPath.Contains(moveStart)) { takenPath.Add(moveStart); }
+                        takenPath.AddRange(AStarNode.FindPath(moveStart, moveEnd, moveCosts));
+                        //if the player's custom path is too long, recalculate it to the shortest path
+                        if (takenPath.Count > speed + 1)
+                        {
+                            takenPath.Clear();
+                            takenPath.Add(startingPosition);
+                            takenPath.AddRange(AStarNode.FindPath(startingPosition, moveEnd, moveCosts));
+                        }
+                    }                    
+                }
+                else
+                {
+                    takenPath.Clear();
+                    takenPath.Add(startingPosition);
                 }
             }
         }
