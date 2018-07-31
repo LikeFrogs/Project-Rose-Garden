@@ -74,9 +74,12 @@
     <Compile Include="Assets\Scripts\Item\RangedWeapon.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
-    <Compile Include="Assets\Scripts\OverlayCanvas.cs" />
-    <Compile Include="Assets\Scripts\PathSegment.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
+    <Compile Include="Assets\Scripts\UI\Dialogue Scripts\DialogueBuilder.cs" />
+    <Compile Include="Assets\Scripts\UI\Dialogue Scripts\DialogueNode.cs" />
+    <Compile Include="Assets\Scripts\UI\Dialogue Scripts\DialogueSequence.cs" />
+    <Compile Include="Assets\Scripts\UI\OverlayCanvas.cs" />
+    <Compile Include="Assets\Scripts\UI\PathSegment.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>D:/Rose_Garden/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>

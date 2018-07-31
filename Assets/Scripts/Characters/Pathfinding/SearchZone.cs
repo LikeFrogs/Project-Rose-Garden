@@ -12,7 +12,7 @@ public class SearchZone : MonoBehaviour
     {
         public List<Vector3> positionOptions;
     }
-    [SerializeField] List<ListWrapper> wrappedList = new List<ListWrapper>();
+    [SerializeField] private List<ListWrapper> wrappedList = new List<ListWrapper>();
     private List<List<Vector3>> keyPositionLists;
 
     //sets up the List<List<Vector3>> from the wrapped list
