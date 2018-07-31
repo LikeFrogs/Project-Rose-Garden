@@ -1081,8 +1081,7 @@ public class Enemy : CombatChar
                     //////////////////if(status != EnemyStatus.CanSeeTarget) { finishedTurn = true; }
                     status = EnemyStatus.CanSeeTarget;
                     workingStatus = WorkingStatus.WaitingOnCoroutine;
-                    ////status = EnemyStatus.Attacking;
-                    ////StartCoroutine(TargetSighted());
+                    StartCoroutine(CanSeeTarget());
                 }
             }
         }
@@ -1555,6 +1554,10 @@ public class Enemy : CombatChar
         }
 
         lastKnowPositions[character] = lastKnownPosition;
+
+        //*****************************************************************needs update here
+        //if(lastKnownPositions.count > 0) basically, if a player moved through sight cone and then left it,
+        //enemy needs to react
 
         status = EnemyStatus.Testing;
     }

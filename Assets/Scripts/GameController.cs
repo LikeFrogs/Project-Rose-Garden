@@ -10,16 +10,18 @@ public class GameController : MonoBehaviour
 {
     #region Prefabs
     //editor assigned prefabs
-    [SerializeField] GameObject NEWPlayer;
-    [SerializeField] GameObject purpleSquare;
-    [SerializeField] GameObject canvas;
-    [SerializeField] GameObject button;
-    [SerializeField] GameObject selectionSquare;
-    [SerializeField] GameObject selectedSquare;
-    [SerializeField] GameObject attackSquare;
-    [SerializeField] GameObject sightSquare;
+    [SerializeField] private GameObject pathSegment;
+    [SerializeField] private GameObject NEWPlayer;
+    [SerializeField] private GameObject purpleSquare;
+    [SerializeField] private GameObject canvas;
+    [SerializeField] private GameObject button;
+    [SerializeField] private GameObject selectionSquare;
+    [SerializeField] private GameObject selectedSquare;
+    [SerializeField] private GameObject attackSquare;
+    [SerializeField] private GameObject sightSquare;
 
     //static version of prefabs to be set in Awake()
+    private static GameObject pathPrefab;
     private static GameObject moveRangeSprite;
     private static GameObject buttonPrefab;
     private static GameObject canvasPrefab;
@@ -29,6 +31,17 @@ public class GameController : MonoBehaviour
     private static GameObject sightPrefab;
 
     //static prefab properties to be accessed by other classes
+    public static GameObject PathPrefab
+    {
+        get
+        {
+            return pathPrefab;
+        }
+    }
+
+
+
+
     /// <summary>
     /// Gets the visual for displaying move range
     /// </summary>
@@ -84,7 +97,6 @@ public class GameController : MonoBehaviour
     //tells this when to give control to the SceneController
     private bool sceneLoaded;
     //holds the playable party members between scenes
-    //private List<PlayerCharacter> party;
     private List<PlayerCharacter> party;
     #endregion
 
@@ -100,7 +112,9 @@ public class GameController : MonoBehaviour
     }
     #endregion
 
-    // Use this for initialization
+    /// <summary>
+    /// Use this for initialization
+    /// </summary>
     void Awake ()
     {
         //this will be used for the entire game
@@ -109,6 +123,7 @@ public class GameController : MonoBehaviour
         SceneManager.sceneLoaded += BeginScene;
 
         //creates the statics from the editor assigned prefabs
+        pathPrefab = pathSegment;
         moveRangeSprite = purpleSquare;
         buttonPrefab = button;
         canvasPrefab = canvas;
@@ -132,7 +147,9 @@ public class GameController : MonoBehaviour
         SceneManager.LoadScene("DijkstraTest");
     }
 
-	// Update is called once per frame
+    /// <summary>
+    /// Update is called once per frame
+    /// </summary>
 	void Update ()
     {
         //runs the BeginPlay method of the manager in the new scene

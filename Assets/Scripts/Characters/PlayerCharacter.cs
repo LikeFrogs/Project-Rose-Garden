@@ -119,6 +119,8 @@ public abstract class PlayerCharacter : CombatChar
     }
 
     //character-personal UI elements
+    protected List<GameObject> unusedPathSegments;
+    protected List<GameObject> pathSegments;
     protected List<GameObject> unusedActionButtons;
     protected Dictionary<Vector2, GameObject> actionButtons;
     protected List<GameObject> unusedTargetIcons;
@@ -146,18 +148,6 @@ public abstract class PlayerCharacter : CombatChar
     /// </summary>
     protected virtual void Update()
     {
-        //******************************TEMP
-        if (takenPath.Count > 0)
-        {
-            //Debug.DrawLine(startingPosition, takenPath[0]);
-
-            for (int i = 1; i < takenPath.Count; i++)
-            {
-                Debug.DrawLine(takenPath[i - 1], takenPath[i]);
-            }
-        }
-        
-
         if (status == Status.MovePhase)
         {
             //input for action menu
@@ -213,13 +203,18 @@ public abstract class PlayerCharacter : CombatChar
             lerpTime += Time.deltaTime * 5;
             transform.position = Vector3.Lerp(moveStart, moveEnd, lerpTime);
 
+            //finsh the move
             if (lerpTime >= 1f)
             {
+                //snap to the target square in case of float errors
                 transform.position = moveEnd;
+                //player can now continue to move
                 status = Status.MovePhase;
 
+                //draw possible targets
                 DrawTargets();
 
+                //if the player has left its starting position, set up its path
                 if (transform.position != startingPosition)
                 {
                     //calculate move range
@@ -249,6 +244,7 @@ public abstract class PlayerCharacter : CombatChar
                             }
                         }
                     }
+                    //otherwise add the new position to the end of the path
                     else
                     {
                         if (!takenPath.Contains(moveStart)) { takenPath.Add(moveStart); }
@@ -260,15 +256,54 @@ public abstract class PlayerCharacter : CombatChar
                             takenPath.Add(startingPosition);
                             takenPath.AddRange(AStarNode.FindPath(startingPosition, moveEnd, moveCosts));
                         }
-                    }                    
+                    }
+
+                    DrawPath();
                 }
+                //if the player has returned to its starting position, remove the path
                 else
                 {
+                    ResetPathSegments();
                     takenPath.Clear();
+                    //an empty path should technically still contain the player's starting position
                     takenPath.Add(startingPosition);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Draws the currently proposed path that this character will take if its turn is ended
+    /// </summary>
+    private void DrawPath()
+    {
+        //clear segments before drawing new ones
+        ResetPathSegments();
+
+        //loop through path and draw segment for each part
+        for(int i = 1; i < takenPath.Count; i++)
+        {
+            //determine the location of the new segment
+            Vector2 pathSegmentPosition = new Vector2((takenPath[i - 1].x + takenPath[i].x) / 2, (takenPath[i - 1].y + takenPath[i].y) / 2);
+
+            //determine the orientation of the new segment
+            bool horizontal = false;
+            if(takenPath[i - 1].y - takenPath[i].y == 0)
+            {
+                horizontal = true;
+            }
+
+            //set up the new segment to draw
+            pathSegments.Add(unusedPathSegments[unusedPathSegments.Count - 1]);
+            unusedPathSegments.RemoveAt(unusedPathSegments.Count - 1);
+            pathSegments[pathSegments.Count - 1].SetActive(true);
+            pathSegments[pathSegments.Count - 1].GetComponent<PathSegment>().SetImage(horizontal);
+            pathSegments[pathSegments.Count - 1].transform.SetAsLastSibling();
+
+            pathSegments[pathSegments.Count - 1].GetComponent<RectTransform>().anchoredPosition = pathSegmentPosition;
+            pathSegments[pathSegments.Count - 1].GetComponent<RectTransform>().sizeDelta = new Vector2(1, 1);
+        }
+
     }
 
     /// <summary>
@@ -306,6 +341,8 @@ public abstract class PlayerCharacter : CombatChar
         unusedActionButtons = new List<GameObject>();
         targetIcons = new Dictionary<Vector3, GameObject>();
         unusedTargetIcons = new List<GameObject>();
+        pathSegments = new List<GameObject>();
+        unusedPathSegments = new List<GameObject>();
         //movement range sprites
         for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
         {
@@ -352,6 +389,18 @@ public abstract class PlayerCharacter : CombatChar
             indicator.SetActive(false);
 
             unusedTargetIcons.Add(indicator);
+            DontDestroyOnLoad(indicator);
+
+            indicator.SetActive(false);
+            indicator.transform.SetParent(canvas.transform);
+        }
+        //path segments
+        for (int i = 0; i < speed; i++)
+        {
+            GameObject indicator = Instantiate(GameController.PathPrefab);
+            indicator.SetActive(false);
+
+            unusedPathSegments.Add(indicator);
             DontDestroyOnLoad(indicator);
 
             indicator.SetActive(false);
@@ -483,6 +532,8 @@ public abstract class PlayerCharacter : CombatChar
         ResetActionButtons();
         //target icons
         ResetTargetIcons();
+        //path segments
+        ResetPathSegments();
 
         //notify any subscribers of the path taken to the character's current position
         NotifyOfMove(takenPath);
@@ -521,6 +572,19 @@ public abstract class PlayerCharacter : CombatChar
             unusedTargetIcons.Add(icons[i]);
         }
         targetIcons.Clear();
+    }
+
+    /// <summary>
+    /// Removes path segments from the screen
+    /// </summary>
+    protected void ResetPathSegments()
+    {
+        for (int i = 0; i < pathSegments.Count; i++)
+        {
+            pathSegments[i].SetActive(false);
+            unusedPathSegments.Add(pathSegments[i]);
+        }
+        pathSegments.Clear();
     }
 
     /// <summary>

@@ -66,8 +66,8 @@
     <Compile Include="Assets\Scripts\Characters\Pathfinding\AStarPriorityQueue.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraNode.cs" />
     <Compile Include="Assets\Scripts\Characters\Pathfinding\DijkstraPriorityQueue.cs" />
+    <Compile Include="Assets\Scripts\Characters\Pathfinding\SearchZone.cs" />
     <Compile Include="Assets\Scripts\Characters\PlayerCharacter.cs" />
-    <Compile Include="Assets\Scripts\Characters\SearchZone.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />
     <Compile Include="Assets\Scripts\Item\Item.cs" />
     <Compile Include="Assets\Scripts\Item\MeleeWeapon.cs" />
@@ -75,6 +75,7 @@
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
     <Compile Include="Assets\Scripts\OverlayCanvas.cs" />
+    <Compile Include="Assets\Scripts\PathSegment.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>D:/Rose_Garden/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>

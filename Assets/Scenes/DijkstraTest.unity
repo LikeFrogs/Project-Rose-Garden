@@ -9339,7 +9339,7 @@ MonoBehaviour:
   searchZoneList:
   - {fileID: 97140308}
   - {fileID: 551760181}
-  status: 5
+  status: 2
   visionRange: 7
   currentFacingAngle: 0
   visionAngle: 80
