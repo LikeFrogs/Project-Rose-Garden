@@ -4,42 +4,45 @@ using UnityEngine;
 
 public enum DialogueBuilderMode { Build, ReverseEngineer }
 
+/// <summary>
+/// Builds and reverse-engineers DialogueSequences
+/// </summary>
 public class DialogueBuilder : MonoBehaviour
 {
-
-    [SerializeField] private DialogueBuilderMode mode;
-    [SerializeField] private string fileName;
-    [SerializeField] private DialogueSequence sequenceToReverseEngineer;
-
-
     /// <summary>
-    /// All possible sprites for the DialogueSequence
-    /// </summary>
-    [SerializeField] private List<DialogueSequence.PortraitTable> portraits;
-
-    /// <summary>
-    /// All dialogue nodes for the DialogueSequence
+    /// A psuedo DialogueNode used for making editor-serialized lists of DialogueNodes
     /// </summary>
     [System.Serializable]
     private class DialogueNodeWrapper
     {
         public string portrait;
-        [TextArea] public string text;   
-        
+        [TextArea] public string text;
+
         public DialogueNodeWrapper(string portrait, string text)
         {
             this.portrait = portrait;
             this.text = text;
         }
     }
+
+
+    [SerializeField] private DialogueBuilderMode mode;
+    [SerializeField] private string fileName;
+    [SerializeField] private DialogueSequence sequenceToReverseEngineer;
+    [SerializeField] private List<DialogueSequence.PortraitTable> portraits;
     [SerializeField] private List<DialogueNodeWrapper> nodes = new List<DialogueNodeWrapper>();
 
+    /// <summary>
+    /// Runs at the beginning of the scene
+    /// </summary>
     private void Start()
     {
         if (mode == DialogueBuilderMode.Build)
         {
+            //create a new DialogueSequence
             DialogueSequence dialogueSequence = (DialogueSequence)ScriptableObject.CreateInstance("DialogueSequence");
 
+            //load the portraits into the DialogueSequence
             List<DialogueSequence.PortraitTable> sprites = new List<DialogueSequence.PortraitTable>();
             for (int i = 0; i < portraits.Count; i++)
             {
@@ -47,6 +50,7 @@ public class DialogueBuilder : MonoBehaviour
             }
             dialogueSequence.Portraits = sprites;
 
+            //load the DialogueNodes into the DialogueSequence
             dialogueSequence.Nodes = new List<DialogueNode>();
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -54,39 +58,42 @@ public class DialogueBuilder : MonoBehaviour
                 dialogueSequence.Nodes.Add(node);
             }
 
+            //set up file name if not provided
             if(fileName == null) { fileName = "DialougeSequence"; }
-            UnityEditor.AssetDatabase.CreateAsset(dialogueSequence, "Assets/Dialogue Sequences/" + fileName + ".asset");
 
-            sequenceToReverseEngineer = (DialogueSequence)UnityEditor.AssetDatabase.LoadAssetAtPath("Assets/Dialogue Sequences/" + fileName + ".asset", System.Type.GetType("DialogueSequence"));
+            //save the file
+            UnityEditor.AssetDatabase.CreateAsset(dialogueSequence, "Assets/Dialogue Sequences/" + fileName + ".asset");
         }
         else if (mode == DialogueBuilderMode.ReverseEngineer)
         {
+            //error message
             if(sequenceToReverseEngineer == null)
             {
                 Debug.Log("No dialogue sequence present to reverse engineer");
                 return;
             }
 
-            Debug.Log("Reverse Engineering");
+            //read portraits from saved DialogueSequence
+            portraits = sequenceToReverseEngineer.Portraits;
 
-            portraits = new List<DialogueSequence.PortraitTable>();
-            //foreach (KeyValuePair<string, Sprite> portrait in sequenceToReverseEngineer.Portraits)
-            //{
-            //    portraits.Add(new DictionaryWrapper(portrait.Key, portrait.Value));
-            //}
-
+            //read DialogueNodes from saved DialogueSequence
             nodes = new List<DialogueNodeWrapper>();
             for(int i = 0; i < sequenceToReverseEngineer.Nodes.Count; i++)
             {
                 nodes.Add(new DialogueNodeWrapper(sequenceToReverseEngineer.Nodes[i].Portratit, sequenceToReverseEngineer.Nodes[i].Text));
             }
 
-            Debug.Log("Successfully reverse engineered. Go to the Scene tab to edit the sequence, then change Mode to Build, return to Game view and press Enter.");
+            //instruction message
+            Debug.Log("Go to the Scene tab to edit the sequence, then change Mode to Build, return to Game view and press Enter.");
         }
     }
 
+    /// <summary>
+    /// Runs once every frame
+    /// </summary>
     private void Update()
     {
+        //allows the user to run the algorithm again by pressing enter
         if (Input.GetKeyDown(KeyCode.Return))
         {
             Start();
