@@ -5,35 +5,18 @@ using UnityEngine;
 /// <summary>
 /// A full sequence of Dialogue, mad up of DialogueNode's
 /// </summary>
-public class DialogueSequence : ScriptableObject
+[CreateAssetMenu] public class DialogueSequence : ScriptableObject
 {
-    /// <summary>
-    /// The easiest way to serialize a Dictionary
-    /// </summary>
-    [System.Serializable]
-    public class PortraitTable
-    {
-        public string name;
-        public Sprite portrait;
-
-        public PortraitTable(string name, Sprite portrait)
-        {
-            this.name = name;
-            this.portrait = portrait;
-        }
-    }
-
-
-    [HideInInspector] private List<PortraitTable> portraits;
-    [HideInInspector] private List<DialogueNode> nodes;
-    
-    /// <summary>
-    /// Gets or sets the psuedo dictionary of Portraits
-    /// </summary>
-    public List<PortraitTable> Portraits { get { return portraits; } set { portraits = value; } }
+    [SerializeField] private List<DialogueNode> nodes;
     
     /// <summary>
     /// Gets or sets the list of DialogueNodes
     /// </summary>
     public List<DialogueNode> Nodes { get { return nodes; } set { nodes = value; } }
+
+    /// <summary>
+    /// Indexer property for getting a specific node from the seuqence
+    /// </summary>
+    /// <param name="i">The supplied index for the property</param>
+    public DialogueNode this[int i] { get { return nodes[i]; } }
 }

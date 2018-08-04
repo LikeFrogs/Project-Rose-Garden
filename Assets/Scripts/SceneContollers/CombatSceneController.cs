@@ -1,36 +1,59 @@
 ﻿﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera, DampingCamera }
 
+/// <summary>
+/// Handles the game loop during combat
+/// </summary>
 public class CombatSceneController : MonoBehaviour
 {
+    [SerializeField] private Image dialogueSprite;
+    [SerializeField] private Text dialogueText;
+    [SerializeField] private DialogueSequence openingDialogueSequence;
+    private int dialogueSequenceIndex;
+
+
+
+    #region Fields and properties
     private CombatSceneState state;
 
-    private OverlayCanvas overlayCanvas;
-
-
-    private GameObject inspectionReticule;
-
-
-    private Canvas worldCanvas;
+    //world UI
+    [SerializeField] private Vector3 topRightCorner;
+    [SerializeField] private Canvas worldCanvas;
+    protected List<GameObject> unusedPathSegments;
+    protected List<GameObject> pathSegments;
+    protected List<GameObject> unusedActionButtons;
+    protected Dictionary<Vector2, GameObject> actionButtons;
+    protected List<GameObject> unusedTargetIcons;
+    protected Dictionary<Vector3, GameObject> targetIcons;
+    private List<GameObject> unusedMoveRangeIndicators;
+    private List<GameObject> unusedRangeIndicators;
+    private Dictionary<Vector3, GameObject> moveRangeIndicators;
+    private Dictionary<Vector3, GameObject> attackRangeIndicators;
+    
+    //overlay UI
+    [SerializeField] private OverlayCanvas overlayCanvas;
+    private GameObject inspectionReticule;  
+    
+    //camera
     private Camera camera;
-    private Dictionary<Vector3, CombatChar> currentCombatantPositions;
     private Vector3 cameraMoveStart;
     private Vector3 cameraMoveEnd;
     private float lerpTime;
     private Vector3 dampVelocity;
 
+    //combatant book keeping
+    private Dictionary<Vector3, CombatChar> currentCombatantPositions;
     private List<CombatChar> finishedList;
     private List<CombatChar> currentTurnBlock;
     private List<CombatChar> nextList;
-
-    [SerializeField] private Vector3 topRightCorner;
-
     private static List<CombatChar> goodGuys;
     private static List<Enemy> enemies;
     private static float[,] moveCosts;
+    
 
     /// <summary>
     /// Gets the top right corner of the map
@@ -50,10 +73,11 @@ public class CombatSceneController : MonoBehaviour
     /// </summary>
     public static float[,] MoveCosts { get { return (float[,])moveCosts.Clone(); } }
 
+    #endregion
 
-
-
-    // Use this for initialization
+    /// <summary>
+    /// Used for initialization
+    /// </summary>
     void Start()
     {
         finishedList = new List<CombatChar>();
@@ -68,7 +92,7 @@ public class CombatSceneController : MonoBehaviour
         camera = Camera.main;
         camera.transform.position = new Vector3((int)(topRightCorner.x / 2), (int)(topRightCorner.y / 2), -10);
 
-        worldCanvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
+        //worldCanvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
         worldCanvas.GetComponent<RectTransform>().sizeDelta = topRightCorner;
 
         inspectionReticule = Instantiate(GameController.SelectedPrefab);
@@ -76,12 +100,18 @@ public class CombatSceneController : MonoBehaviour
         inspectionReticule.transform.SetParent(worldCanvas.transform);
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Update is called once per frame
+    /// </summary>
     void Update()
     {
         if (state == CombatSceneState.OpeningDialogue)
         {
-            // TODO
+            if(Input.GetKeyDown(KeyCode.Space))
+            {
+                dialogueSequenceIndex++;
+                DisplayCurrentDialogueNode();
+            }
         }
 
         //switches into free movement of camera for character analysis
@@ -195,11 +225,7 @@ public class CombatSceneController : MonoBehaviour
                 state = CombatSceneState.Combat;
             }
         }
-
-
-
-
-
+        
         if (state == CombatSceneState.CameraMode)
         {
             //gets input for moving the camera
@@ -243,17 +269,12 @@ public class CombatSceneController : MonoBehaviour
         }
     }
 
-
-
-
     /// <summary>
-    /// Begins the scene
+    /// Sets up and begins the scene
     /// </summary>
     /// <param name="party"></param>
     public void StartScene(List<PlayerCharacter> party)
     {
-        overlayCanvas = GameObject.FindGameObjectWithTag("OverlayCanvas").GetComponent<OverlayCanvas>();
-
         //set up the move cost matrix based on walls and the size of the map
         moveCosts = new float[(int)topRightCorner.x + 1, (int)TopRightCorner.y + 1];
         for (int i = 0; i < moveCosts.GetLength(0); i++)
@@ -269,17 +290,114 @@ public class CombatSceneController : MonoBehaviour
             moveCosts[(int)blockedPositions[i].x, (int)blockedPositions[i].y] = 0;
         }
 
+        //check max speed and range of the party so as to know how much UI to make
+        int maxSpeed = 0;
+        int maxRange = 0;
         //adds all playable character to nextList and goodGuys
-        if (party.Count != 0)
+        for (int i = 0; i < party.Count; i++)
         {
-            for (int i = 0; i < party.Count; i++)
-            {
-                nextList.Add(party[i]);
-                goodGuys.Add(party[i]);
-            }
+            nextList.Add(party[i]);
+            goodGuys.Add(party[i]);
+
+            if(party[i].MaxSpeed > maxSpeed) { maxSpeed = party[i].MaxSpeed; }
+            if(party[i].AttackRange > maxRange) { maxRange = party[i].AttackRange; }
         }
 
-        ////add enemies to nextList and runs their targeting set up
+        //UI pooling for this scene
+        moveRangeIndicators = new Dictionary<Vector3, GameObject>();
+        attackRangeIndicators = new Dictionary<Vector3, GameObject>();
+        unusedMoveRangeIndicators = new List<GameObject>();
+        unusedRangeIndicators = new List<GameObject>();
+        actionButtons = new Dictionary<Vector2, GameObject>();
+        unusedActionButtons = new List<GameObject>();
+        targetIcons = new Dictionary<Vector3, GameObject>();
+        unusedTargetIcons = new List<GameObject>();
+        pathSegments = new List<GameObject>();
+        unusedPathSegments = new List<GameObject>();
+        //movement range sprites
+        for (int x = 0 - maxSpeed; x <= maxSpeed; x++)
+        {
+            for (int y = 0 - (maxSpeed - System.Math.Abs(0 - x)); System.Math.Abs(0 - x) + System.Math.Abs(0 - y) <= maxSpeed; y++)
+            {
+                GameObject indicator = Instantiate(GameController.MoveRangeSprite);
+                indicator.SetActive(false);
+
+                unusedMoveRangeIndicators.Add(indicator);
+                DontDestroyOnLoad(indicator);
+
+                indicator.SetActive(false);
+                indicator.transform.SetParent(worldCanvas.transform);
+            }
+        }
+        //attack range sprites
+        for (int i = 0; i < unusedMoveRangeIndicators.Count; i++)
+        {
+            GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
+            indicator.SetActive(false);
+
+            unusedRangeIndicators.Add(indicator);
+            DontDestroyOnLoad(indicator);
+
+            indicator.SetActive(false);
+            indicator.transform.SetParent(worldCanvas.transform);
+        }
+        //action buttons
+        for (int i = 0; i < 15; i++)
+        {
+            GameObject button = Instantiate(GameController.ButtonPrefab);
+            button.SetActive(false);
+
+            unusedActionButtons.Add(button);
+            DontDestroyOnLoad(button);
+
+            button.SetActive(false);
+            button.transform.SetParent(worldCanvas.transform);
+        }
+        //target icons
+        for (int i = 0; i < 10; i++)
+        {
+            GameObject indicator = Instantiate(GameController.SelectionPrefab);
+            indicator.SetActive(false);
+
+            unusedTargetIcons.Add(indicator);
+            DontDestroyOnLoad(indicator);
+
+            indicator.SetActive(false);
+            indicator.transform.SetParent(worldCanvas.transform);
+        }
+        //path segments
+        for (int i = 0; i < maxSpeed; i++)
+        {
+            GameObject indicator = Instantiate(GameController.PathPrefab);
+            indicator.SetActive(false);
+
+            unusedPathSegments.Add(indicator);
+            DontDestroyOnLoad(indicator);
+
+            indicator.SetActive(false);
+            indicator.transform.SetParent(worldCanvas.transform);
+        }
+
+        //attach the UI in this scene to the party
+        for (int i = 0; i < party.Count; i++)
+        {
+            party[i].MoveRangeIndicators = moveRangeIndicators;
+            party[i].AttackRangeIndicators = attackRangeIndicators;
+            party[i].UnusedMoveRangeIndicators = unusedMoveRangeIndicators;
+            party[i].UnusedAttackRangeIndicators = unusedRangeIndicators;
+            party[i].ActionButtons = actionButtons;
+            party[i].UnusedActionButtons = unusedActionButtons;
+            party[i].TargetIcons = targetIcons;
+            party[i].UnusedTargetIcons = unusedTargetIcons;
+            party[i].PathSegments = pathSegments;
+            party[i].UnusedPathSegments = unusedPathSegments;
+
+
+
+            party[i].Canvas = worldCanvas;
+        }
+
+        //add enemies to nextList and runs their targeting set up
         enemies = (from gameObject in GameObject.FindGameObjectsWithTag("Enemy") select gameObject.GetComponent<Enemy>()).ToList();
         foreach (Enemy enemy in enemies)
         {
@@ -296,12 +414,32 @@ public class CombatSceneController : MonoBehaviour
         //sort all the lists
         SortLists();
 
-        //begin the combat stage of the scene
-        state = CombatSceneState.Combat;
 
-        //set up the first char to go
-        camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
-        currentTurnBlock[0].BeginTurn();
+
+
+
+
+
+
+
+
+
+
+        state = CombatSceneState.OpeningDialogue;
+        dialogueSequenceIndex = 0;
+        DisplayCurrentDialogueNode();
+
+
+
+
+
+
+        ////begin the combat stage of the scene
+        //state = CombatSceneState.Combat;
+
+        ////set up the first char to go
+        //camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
+        //currentTurnBlock[0].BeginTurn();
     }
 
     /// <summary>
@@ -309,6 +447,7 @@ public class CombatSceneController : MonoBehaviour
     /// </summary>
     private void SortLists()
     {
+        //all consecutive player turns are within the same turn block and can be freely switched between
         if (nextList.Count > 0 && nextList[0] is PlayerCharacter)
         {
             while (nextList.Count > 0 && nextList[0] is PlayerCharacter)
@@ -317,6 +456,7 @@ public class CombatSceneController : MonoBehaviour
                 nextList.RemoveAt(0);
             }
         }
+        //all consecutive enemy turns are within the same turn block
         else if (nextList.Count > 0 && nextList[0] is Enemy)
         {
             while (nextList.Count > 0 && nextList[0] is Enemy)
@@ -325,6 +465,7 @@ public class CombatSceneController : MonoBehaviour
                 nextList.RemoveAt(0);
             }
         }
+        //the only other possibility is that nextList is empty
         else
         {
             nextList.AddRange(finishedList);
@@ -338,6 +479,26 @@ public class CombatSceneController : MonoBehaviour
         }
     }
 
+
+    private void DisplayCurrentDialogueNode()
+    {
+        if(dialogueSequenceIndex >= openingDialogueSequence.Nodes.Count)
+        {
+            dialogueSprite.transform.parent.gameObject.SetActive(false);
+
+            //begin the combat stage of the scene
+            state = CombatSceneState.Combat;
+
+            //set up the first char to go
+            camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
+            currentTurnBlock[0].BeginTurn();
+            return;
+        }
+
+        DialogueNode node = openingDialogueSequence[dialogueSequenceIndex];
+        dialogueSprite.sprite = node.Portratit;
+        dialogueText.text = node.Text;
+    }
 
     //protected abstract void CheckObjective();
 }

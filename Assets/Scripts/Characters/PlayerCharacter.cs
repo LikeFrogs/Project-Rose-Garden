@@ -7,6 +7,9 @@ using UnityEngine.EventSystems;
 
 public enum Status { MovePhase, Moving, ActionMenu, WaitingForSubclass, None }
 
+/// <summary>
+/// Abstract parent class for all playable characters
+/// </summary>
 public abstract class PlayerCharacter : CombatChar
 {
     #region Stats fields and properties
@@ -119,17 +122,33 @@ public abstract class PlayerCharacter : CombatChar
     }
 
     //character-personal UI elements
-    protected List<GameObject> unusedPathSegments;
-    protected List<GameObject> pathSegments;
-    protected List<GameObject> unusedActionButtons;
-    protected Dictionary<Vector2, GameObject> actionButtons;
-    protected List<GameObject> unusedTargetIcons;
-    protected Dictionary<Vector3, GameObject> targetIcons;
     private List<GameObject> unusedMoveRangeIndicators;
     private List<GameObject> unusedRangeIndicators;
+    protected List<GameObject> unusedActionButtons;
+    protected List<GameObject> unusedTargetIcons;
+    protected List<GameObject> unusedPathSegments;
+
     private Dictionary<Vector3, GameObject> moveRangeIndicators;
     private Dictionary<Vector3, GameObject> attackRangeIndicators;
+    protected Dictionary<Vector2, GameObject> actionButtons;    
+    protected Dictionary<Vector3, GameObject> targetIcons;        
+    protected List<GameObject> pathSegments;
+
     protected Canvas canvas;
+
+    public List<GameObject> UnusedMoveRangeIndicators { set { unusedMoveRangeIndicators = value; } }
+    public List<GameObject> UnusedAttackRangeIndicators { set { unusedRangeIndicators = value; } }
+    public List<GameObject> UnusedActionButtons { set { unusedActionButtons = value; } }
+    public List<GameObject> UnusedTargetIcons { set { unusedTargetIcons = value; } }
+    public List<GameObject> UnusedPathSegments { set { unusedPathSegments = value; } }
+    public List<GameObject> PathSegments { set { pathSegments = value; } }
+
+    public Dictionary<Vector3, GameObject> MoveRangeIndicators { set { moveRangeIndicators = value; } }
+    public Dictionary<Vector3, GameObject> AttackRangeIndicators { set { attackRangeIndicators = value; } }
+    public Dictionary<Vector2, GameObject> ActionButtons { set { actionButtons = value; } }
+    public Dictionary<Vector3, GameObject> TargetIcons { set { targetIcons = value; } }
+
+    public Canvas Canvas { set { canvas = value; } }
 
     //movement stuff
     protected Vector3 startingPosition;
@@ -248,7 +267,36 @@ public abstract class PlayerCharacter : CombatChar
                     else
                     {
                         if (!takenPath.Contains(moveStart)) { takenPath.Add(moveStart); }
-                        takenPath.AddRange(AStarNode.FindPath(moveStart, moveEnd, moveCosts));
+
+                        //add the path to the new ending square to takenPath
+                        List<Vector3> addedPath = AStarNode.FindPath(moveStart, moveEnd, moveCosts);
+                        //if the addedPath was larger than 1 square (the player moved diagonally)
+                        //then it is possible that they crossed over tiles already in takenPath
+                        //these need to be removed before addedPath can be added to takenPath
+                        if(addedPath.Count > 1)
+                        {
+                            for(int i = 0; i < addedPath.Count; i++)
+                            {
+                                if(takenPath.Contains(addedPath[i]))
+                                {
+                                    for(int j = takenPath.Count - 1; j >= 0; j--)
+                                    {
+                                        if(takenPath[j] == addedPath[i])
+                                        {
+                                            takenPath.RemoveAt(j);
+                                            j = -1;
+                                            i = addedPath.Count;
+                                        }
+                                        else
+                                        {
+                                            takenPath.RemoveAt(j);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        takenPath.AddRange(addedPath);
+
                         //if the player's custom path is too long, recalculate it to the shortest path
                         if (takenPath.Count > speed + 1)
                         {
@@ -330,82 +378,6 @@ public abstract class PlayerCharacter : CombatChar
 
         //the playable party will always transfer between scenes
         DontDestroyOnLoad(transform);
-
-        //UI object pooling set up
-        canvas = GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>();
-        moveRangeIndicators = new Dictionary<Vector3, GameObject>();
-        attackRangeIndicators = new Dictionary<Vector3, GameObject>();
-        unusedMoveRangeIndicators = new List<GameObject>();
-        unusedRangeIndicators = new List<GameObject>();
-        actionButtons = new Dictionary<Vector2, GameObject>();
-        unusedActionButtons = new List<GameObject>();
-        targetIcons = new Dictionary<Vector3, GameObject>();
-        unusedTargetIcons = new List<GameObject>();
-        pathSegments = new List<GameObject>();
-        unusedPathSegments = new List<GameObject>();
-        //movement range sprites
-        for (int x = (int)transform.position.x - speed; x <= (int)transform.position.x + speed; x++)
-        {
-            for (int y = (int)transform.position.y - (speed - System.Math.Abs((int)transform.position.x - x)); System.Math.Abs((int)transform.position.x - x) + System.Math.Abs((int)transform.position.y - y) <= speed; y++)
-            {
-                GameObject indicator = Instantiate(GameController.MoveRangeSprite);
-                indicator.SetActive(false);
-
-                unusedMoveRangeIndicators.Add(indicator);
-                DontDestroyOnLoad(indicator);
-
-                indicator.SetActive(false);
-                indicator.transform.SetParent(canvas.transform);
-            }
-        }
-        //attack range sprites
-        for (int i = 0; i < unusedMoveRangeIndicators.Count; i++)
-        {
-            GameObject indicator = Instantiate(GameController.AttackSquarePrefab);
-            indicator.SetActive(false);
-
-            unusedRangeIndicators.Add(indicator);
-            DontDestroyOnLoad(indicator);
-
-            indicator.SetActive(false);
-            indicator.transform.SetParent(canvas.transform);
-        }
-        //action buttons
-        for (int i = 0; i < 15; i++)
-        {
-            GameObject button = Instantiate(GameController.ButtonPrefab);
-            button.SetActive(false);
-
-            unusedActionButtons.Add(button);
-            DontDestroyOnLoad(button);
-
-            button.SetActive(false);
-            button.transform.SetParent(canvas.transform);
-        }
-        //target icons
-        for (int i = 0; i < 10; i++)
-        {
-            GameObject indicator = Instantiate(GameController.SelectionPrefab);
-            indicator.SetActive(false);
-
-            unusedTargetIcons.Add(indicator);
-            DontDestroyOnLoad(indicator);
-
-            indicator.SetActive(false);
-            indicator.transform.SetParent(canvas.transform);
-        }
-        //path segments
-        for (int i = 0; i < speed; i++)
-        {
-            GameObject indicator = Instantiate(GameController.PathPrefab);
-            indicator.SetActive(false);
-
-            unusedPathSegments.Add(indicator);
-            DontDestroyOnLoad(indicator);
-
-            indicator.SetActive(false);
-            indicator.transform.SetParent(canvas.transform);
-        }
     }
 
     /// <summary>

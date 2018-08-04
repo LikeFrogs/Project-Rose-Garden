@@ -8,22 +8,16 @@ using UnityEngine;
 [System.Serializable]
 public class DialogueNode
 {
-    private string text;
-    private string portrait;
+    [SerializeField] private Sprite portrait;
+    [SerializeField] [TextArea] private string text;
 
+    /// <summary>
+    /// Gets the portrait of this DialogueNode
+    /// </summary>
+    public Sprite Portratit { get { return portrait; } }
     /// <summary>
     /// Gets the text of this DialogueNode
     /// </summary>
     public string Text { get { return text; } }
-    /// <summary>
-    /// Gets the portrait of this DialogueNode
-    /// </summary>
-    public string Portratit { get { return portrait; } }
-
-    public DialogueNode(string text, string portrait)
-    {
-        this.text = text;
-        this.portrait = portrait;
-    }
 }
  
