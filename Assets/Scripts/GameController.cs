@@ -138,13 +138,14 @@ public class GameController : MonoBehaviour
         //this is where character creation and such should be done
         party = new List<PlayerCharacter>();
 
-        party.Add(Instantiate(NEWPlayer, new Vector3(23, 10), Quaternion.identity).GetComponent<PlayerCharacter>());
-        party.Add(Instantiate(NEWPlayer, new Vector3(32, 4), Quaternion.identity).GetComponent<PlayerCharacter>());
+        party.Add(Instantiate(NEWPlayer, new Vector3(16, 7), Quaternion.identity).GetComponent<PlayerCharacter>());
+        party.Add(Instantiate(NEWPlayer, new Vector3(43, 35), Quaternion.identity).GetComponent<PlayerCharacter>());
 
-        party[0].GetComponent<PlayerCharacter>().Init(30, 8, 5, 15, 15, 2);
-        party[1].GetComponent<PlayerCharacter>().Init(30, 4, 5, 15, 15, 2);
+        party[0].GetComponent<PlayerCharacter>().Init(10, 5, 10, 0, 5, 0);
+        party[1].GetComponent<PlayerCharacter>().Init(10, 9, 10, 0, 5, 0);
 
-        SceneManager.LoadScene("DijkstraTest");
+        //SceneManager.LoadScene("DijkstraTest");
+        SceneManager.LoadScene("Demo");
     }
 
     /// <summary>

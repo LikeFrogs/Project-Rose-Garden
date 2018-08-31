@@ -102,6 +102,14 @@ public class AStarNode
         return (path == null) ? int.MaxValue : path.Count;
     }
 
+    /// <summary>
+    /// Determines if it is possible to construct a path from one point to another
+    /// </summary>
+    /// <param name="startPos">The start of the proposed path</param>
+    /// <param name="endPos">The end of the proposed path</param>
+    /// <param name="moveCosts">Cost of moving to any given tile</param>
+    /// <param name="speed">Speed of the character checking for a path, and thus the maximum lenght of the path</param>
+    /// <returns>True if there is a possible path</returns>
     public static bool CheckSquare(Vector3 startPos, Vector3 endPos, float[,] moveCosts, int speed)
     {
         List<Vector3> path = FindPath(startPos, endPos, moveCosts);
@@ -190,5 +198,71 @@ public class AStarNode
         }
 
         return path;
+    }
+
+
+
+
+
+
+
+
+
+
+    public static List<Vector3> FindPath(Vector3 startPos, Vector3 endPos, Dictionary<Vector3, GameObject> vision)
+    {
+        //calculate move costs based on provided range of vision
+        float[,] moveCosts = CombatSceneController.MoveCosts;
+        List<CombatChar> obstacles = CombatSceneController.GoodGuys;
+        for (int i = 0; i < obstacles.Count; i++)
+        {
+            if (vision.ContainsKey(obstacles[i].transform.position))
+            {
+                moveCosts[(int)obstacles[i].transform.position.x, (int)obstacles[i].transform.position.y] = 0;
+            }
+        }
+
+
+        //set up search parameters
+        AStarPriorityQueue openQueue = new AStarPriorityQueue();
+        AStarNode[,] graph = new AStarNode[moveCosts.GetLength(0), moveCosts.GetLength(1)];
+        int targetX = (int)endPos.x;
+        int targetY = (int)endPos.y;
+        AStarNode startNode = new AStarNode((int)startPos.x, (int)startPos.y);
+        openQueue.Insert(startNode);
+        graph[startNode.x, startNode.y] = startNode;
+
+        AStarNode current;
+        while (!openQueue.IsEmpty())
+        {
+            //get the item from the open set with the lowest priority
+            current = openQueue.ExtractMin();
+            current.permanent = true;
+            //if the target position is found, return the path
+            if (current.x == targetX && current.y == targetY) { return current.DeterminePath(); }
+
+            //evaluate each neighbor of current
+            List<AStarNode> neighbors = current.GetNeighbors(moveCosts, graph, targetX, targetY, openQueue);
+            for (int i = 0; i < neighbors.Count; i++)
+            {
+                //if moving to the neighbor is more efficient through current than through its previous parent
+                //then updaate its fields
+                float distanceToNeighbor = current.g + moveCosts[neighbors[i].x, neighbors[i].y];
+                if (distanceToNeighbor < neighbors[i].g)
+                {
+                    neighbors[i].g = distanceToNeighbor;
+                    neighbors[i].f = neighbors[i].g + neighbors[i].h;
+                    neighbors[i].parent = current;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static int PathDistance(Vector3 startPos, Vector3 endPos, Dictionary<Vector3, GameObject> vision)
+    {
+        List<Vector3> path = FindPath(startPos, endPos, vision);
+
+        return (path == null) ? int.MaxValue : path.Count;
     }
 }

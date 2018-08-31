@@ -7,11 +7,6 @@ public class OverlayCanvas : MonoBehaviour
 {
     [SerializeField] private Text text;
 
-    private void Start()
-    {
-        DontDestroyOnLoad(this.transform);
-    }
-
     public void InspectCharacter(CombatChar character)
     {
         text.enabled = true;

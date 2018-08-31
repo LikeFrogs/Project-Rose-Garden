@@ -143,7 +143,15 @@ public class NewTestClass : PlayerCharacter
         abilityList = new List<string>();
         spellList = new List<string>();
 
-        rangedWeapon = new Pistol(5, 5, 3);
+        if(transform.position == new Vector3(43, 35))
+        {
+            rangedWeapon = new Pistol(5, 1, 3);
+        }
+        else
+        {
+            rangedWeapon = new Pistol(5, 3, 3);
+        }
+
         meleeWeapon = new Sword(5);
 
         classStatus = NewTestClassStatus.WaitingForParentClass;

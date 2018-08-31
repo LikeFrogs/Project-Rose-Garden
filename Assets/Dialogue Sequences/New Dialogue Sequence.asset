@@ -12,14 +12,22 @@ MonoBehaviour:
   m_Name: New Dialogue Sequence
   m_EditorClassIdentifier: 
   nodes:
-  - text: This is the first panel
-    portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
-  - text: "Panel 2\t\t\t\t"
-    portrait: {fileID: 21300000, guid: 4daf07e256f630f42848b5bde5396bb0, type: 3}
-  - text: "SUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUPER
-      long panel 3\t\t"
-    portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
-  - text: fasdfasdfasdfasdfasdfasdfasdfasdfasdfasf
-    portrait: {fileID: 21300000, guid: 961b23b8958548d48859712ec53d38df, type: 3}
-  - text: asdfasfasd fasdf asdf asdf asd
-    portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
+  - portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
+    text: 'Here''s a quick rundown of the controls: On your turn use WASD or Arrow
+      keys to move your character around within their movement range. Movement range
+      is the light blue highlighting and attack range is the light green. (Space to
+      continue)'
+  - portrait: {fileID: 21300000, guid: 4daf07e256f630f42848b5bde5396bb0, type: 3}
+    text: The line represents the path that they took this turn; try not to move through
+      an enemy's vision cone.
+  - portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
+    text: Take an action or end your turn by pressing Space or Enter. If you control
+      multiple characters you can also use tab to switch between them.
+  - portrait: {fileID: 21300000, guid: 961b23b8958548d48859712ec53d38df, type: 3}
+    text: Press C during your turn to survey the map and inspect the stats of the
+      various combatants.
+  - portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
+    text: Red walls block line of sight and movement, yellow walls only block movement.
+  - portrait: {fileID: 21300000, guid: 595a385a1a0d2574e97151f20417b396, type: 3}
+    text: 'Now for your mission: defeat all the enemies (purple squares) to beat the
+      level.'

@@ -8,51 +8,51 @@ public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraM
 /// <summary>
 /// Handles the game loop during combat
 /// </summary>
-public class CombatSceneController : MonoBehaviour
+public abstract class CombatSceneController : MonoBehaviour
 {
-    [SerializeField] private Image dialogueSprite;
-    [SerializeField] private Text dialogueText;
-    [SerializeField] private DialogueSequence openingDialogueSequence;
-    private int dialogueSequenceIndex;
+    [SerializeField] protected Image dialogueSprite;
+    [SerializeField] protected Text dialogueText;
+    [SerializeField] protected DialogueSequence openingDialogueSequence;
+    protected int dialogueSequenceIndex;
 
 
 
     #region Fields and properties
-    private CombatSceneState state;
+    protected CombatSceneState state;
 
     //world UI
-    [SerializeField] private Vector3 topRightCorner;
-    [SerializeField] private Canvas worldCanvas;
+    [SerializeField] protected Vector3 topRightCorner;
+    [SerializeField] protected Canvas worldCanvas;
     protected List<GameObject> unusedPathSegments;
     protected List<GameObject> pathSegments;
     protected List<GameObject> unusedActionButtons;
     protected Dictionary<Vector2, GameObject> actionButtons;
     protected List<GameObject> unusedTargetIcons;
     protected Dictionary<Vector3, GameObject> targetIcons;
-    private List<GameObject> unusedMoveRangeIndicators;
-    private List<GameObject> unusedRangeIndicators;
-    private Dictionary<Vector3, GameObject> moveRangeIndicators;
-    private Dictionary<Vector3, GameObject> attackRangeIndicators;
+    protected List<GameObject> unusedMoveRangeIndicators;
+    protected List<GameObject> unusedRangeIndicators;
+    protected Dictionary<Vector3, GameObject> moveRangeIndicators;
+    protected Dictionary<Vector3, GameObject> attackRangeIndicators;
     
     //overlay UI
-    [SerializeField] private OverlayCanvas overlayCanvas;
-    private GameObject inspectionReticule;  
+    [SerializeField] protected OverlayCanvas overlayCanvas;
+    protected GameObject inspectionReticule;  
     
     //camera
-    private Camera camera;
-    private Vector3 cameraMoveStart;
-    private Vector3 cameraMoveEnd;
-    private float lerpTime;
-    private Vector3 dampVelocity;
+    protected Camera camera;
+    protected Vector3 cameraMoveStart;
+    protected Vector3 cameraMoveEnd;
+    protected float lerpTime;
+    protected Vector3 dampVelocity;
 
     //combatant book keeping
-    private Dictionary<Vector3, CombatChar> currentCombatantPositions;
-    private List<CombatChar> finishedList;
-    private List<CombatChar> currentTurnBlock;
-    private List<CombatChar> nextList;
-    private static List<CombatChar> goodGuys;
-    private static List<Enemy> enemies;
-    private static float[,] moveCosts;
+    protected Dictionary<Vector3, CombatChar> currentCombatantPositions;
+    protected List<CombatChar> finishedList;
+    protected List<CombatChar> currentTurnBlock;
+    protected List<CombatChar> nextList;
+    protected static List<CombatChar> goodGuys;
+    protected static List<Enemy> enemies;
+    protected static float[,] moveCosts;
     
 
     /// <summary>
@@ -188,6 +188,8 @@ public class CombatSceneController : MonoBehaviour
                     cameraMoveEnd.z = -10;
                     dampVelocity = Vector3.zero;
                 }
+
+                CheckObjective();
             }
             //switces to the next player character when the user presses tab while in a block of PlayerCharacters
             else if (Input.GetKeyDown(KeyCode.Tab) && currentTurnBlock.Count > 1 && currentTurnBlock[0] is PlayerCharacter) //******************************************************************change to GetButtonDown
@@ -445,7 +447,7 @@ public class CombatSceneController : MonoBehaviour
     /// <summary>
     /// Sorts all lists of combatants
     /// </summary>
-    private void SortLists()
+    protected void SortLists()
     {
         //all consecutive player turns are within the same turn block and can be freely switched between
         if (nextList.Count > 0 && nextList[0] is PlayerCharacter)
@@ -480,7 +482,7 @@ public class CombatSceneController : MonoBehaviour
     }
 
 
-    private void DisplayCurrentDialogueNode()
+    protected void DisplayCurrentDialogueNode()
     {
         if(dialogueSequenceIndex >= openingDialogueSequence.Nodes.Count)
         {
@@ -500,5 +502,5 @@ public class CombatSceneController : MonoBehaviour
         dialogueText.text = node.Text;
     }
 
-    //protected abstract void CheckObjective();
+    protected abstract void CheckObjective();
 }

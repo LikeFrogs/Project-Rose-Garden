@@ -75,6 +75,7 @@
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Pistol.cs" />
     <Compile Include="Assets\Scripts\Item\SpecificWeapons\Sword.cs" />
     <Compile Include="Assets\Scripts\SceneContollers\CombatSceneController.cs" />
+    <Compile Include="Assets\Scripts\SceneContollers\Demo.cs" />
     <Compile Include="Assets\Scripts\UI\Dialogue Scripts\DialogueNode.cs" />
     <Compile Include="Assets\Scripts\UI\Dialogue Scripts\DialogueSequence.cs" />
     <Compile Include="Assets\Scripts\UI\OverlayCanvas.cs" />
