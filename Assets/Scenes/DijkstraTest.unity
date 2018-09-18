@@ -9434,8 +9434,7 @@ MonoBehaviour:
   initiative: 0
   attackRange: 2
   patrolPositions:
-  - {x: 4, y: 8, z: 0}
-  - {x: 4, y: 7, z: 0}
+  - {x: 13, y: 12, z: 0}
   searchZoneList:
   - {fileID: 97140308}
   - {fileID: 551760181}
@@ -18400,7 +18399,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &580568212
 Transform:
   m_ObjectHideFlags: 0
@@ -18408,7 +18407,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 580568211}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3, y: 17, z: 0}
+  m_LocalPosition: {x: 3, y: 11, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1075418445}
@@ -18436,14 +18435,13 @@ MonoBehaviour:
   initiative: 0
   attackRange: 3
   patrolPositions:
-  - {x: 4, y: 8, z: 0}
-  - {x: 4, y: 7, z: 0}
+  - {x: 3, y: 11, z: 0}
   searchZoneList:
   - {fileID: 1113475636}
   - {fileID: 551760181}
   status: 1
   visionRange: 7
-  currentFacingAngle: 270
+  currentFacingAngle: 180
   visionAngle: 80
 --- !u!212 &580568214
 SpriteRenderer:
@@ -43601,13 +43599,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65dab68f65023c0438ce8636fe7d26a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  topRightCorner: {x: 36, y: 20, z: 0}
+  worldCanvas: {fileID: 1001833418}
+  overlayCanvas: {fileID: 980516339}
   dialogueSprite: {fileID: 1810847441}
   dialogueText: {fileID: 1493715306}
   openingDialogueSequence: {fileID: 11400000, guid: 724e20eb984a2b3458e942a16d49899e,
     type: 2}
-  topRightCorner: {x: 36, y: 20, z: 0}
-  worldCanvas: {fileID: 1001833418}
-  overlayCanvas: {fileID: 980516339}
 --- !u!4 &1444191361
 Transform:
   m_ObjectHideFlags: 0
@@ -52451,7 +52449,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1714123620
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52474,15 +52472,12 @@ MonoBehaviour:
   initiative: 0
   attackRange: 3
   patrolPositions:
-  - {x: 18, y: 5, z: 0}
-  - {x: 13, y: 5, z: 0}
-  - {x: 15, y: 8, z: 0}
-  - {x: 13, y: 5, z: 0}
+  - {x: 13, y: 10, z: 0}
   searchZoneList:
   - {fileID: 1113475636}
   - {fileID: 97140308}
   - {fileID: 551760181}
-  status: 1
+  status: 0
   visionRange: 7
   currentFacingAngle: 0
   visionAngle: 80
@@ -52538,7 +52533,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1714123619}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 13, y: 5, z: 0}
+  m_LocalPosition: {x: 13, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1075418445}

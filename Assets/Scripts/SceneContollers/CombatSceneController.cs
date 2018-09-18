@@ -3,22 +3,17 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera, DampingCamera }
+public enum CombatSceneState { OpeningDialogue, ClosingDialogue, Combat, CameraMode, MovingCamera, DampingCamera, ChoosingTarget }
 
 /// <summary>
 /// Handles the game loop during combat
 /// </summary>
 public abstract class CombatSceneController : MonoBehaviour
 {
-    [SerializeField] protected Image dialogueSprite;
-    [SerializeField] protected Text dialogueText;
-    [SerializeField] protected DialogueSequence openingDialogueSequence;
-    protected int dialogueSequenceIndex;
-
-
-
     #region Fields and properties
-    protected CombatSceneState state;
+    protected static CombatSceneState state;
+
+    public static CombatSceneState SceneState { get { return state; } }
 
     //world UI
     [SerializeField] protected Vector3 topRightCorner;
@@ -33,17 +28,27 @@ public abstract class CombatSceneController : MonoBehaviour
     protected List<GameObject> unusedRangeIndicators;
     protected Dictionary<Vector3, GameObject> moveRangeIndicators;
     protected Dictionary<Vector3, GameObject> attackRangeIndicators;
-    
+
+    /// <summary>
+    /// Gets the top right corner of the map
+    /// </summary>
+    public Vector3 TopRightCorner { get { return topRightCorner; } }
+
     //overlay UI
     [SerializeField] protected OverlayCanvas overlayCanvas;
-    protected GameObject inspectionReticule;  
-    
+    protected GameObject inspectionReticule;
+    //dialogue
+    [SerializeField] protected Image dialogueSprite;
+    [SerializeField] protected Text dialogueText;
+    [SerializeField] protected DialogueSequence openingDialogueSequence;
+    protected int dialogueSequenceIndex;
+
     //camera
     protected Camera camera;
-    protected Vector3 cameraMoveStart;
-    protected Vector3 cameraMoveEnd;
+    protected static Vector3 cameraMoveStart;
+    protected static Vector3 cameraMoveEnd;
     protected float lerpTime;
-    protected Vector3 dampVelocity;
+    protected static Vector3 dampVelocity;
 
     //combatant book keeping
     protected Dictionary<Vector3, CombatChar> currentCombatantPositions;
@@ -52,13 +57,7 @@ public abstract class CombatSceneController : MonoBehaviour
     protected List<CombatChar> nextList;
     protected static List<CombatChar> goodGuys;
     protected static List<Enemy> enemies;
-    protected static float[,] moveCosts;
-    
-
-    /// <summary>
-    /// Gets the top right corner of the map
-    /// </summary>
-    public Vector3 TopRightCorner { get { return topRightCorner; } }
+    protected static float[,] moveCosts;    
 
     /// <summary>
     /// Gets the list of playable characters and their allies
@@ -72,7 +71,6 @@ public abstract class CombatSceneController : MonoBehaviour
     /// Gets a matrix representing the cost to move to any tile [x, y]
     /// </summary>
     public static float[,] MoveCosts { get { return (float[,])moveCosts.Clone(); } }
-
     #endregion
 
     /// <summary>
@@ -265,6 +263,31 @@ public abstract class CombatSceneController : MonoBehaviour
             }
         }
 
+        if(state == CombatSceneState.ChoosingTarget)
+        {
+            //smoothly damps the camera to its new position
+            camera.transform.position = Vector3.SmoothDamp(camera.transform.position, cameraMoveEnd, ref dampVelocity, .5f);
+            //prevents velocity from becoming too low
+            if (dampVelocity.magnitude < .5f) { dampVelocity *= 15; }
+
+            //float deltaX = System.Math.Abs(camera.transform.position.x - cameraMoveEnd.x);
+            //float deltaY = System.Math.Abs(camera.transform.position.y - cameraMoveEnd.y);
+            //Debug.Log("Delta x : " + deltaX + " Delta y : " + deltaY + " Velocity : " + dampVelocity.magnitude);
+            //camera.transform.position = new Vector3((int)camera.transform.position.x, (int)camera.transform.position.y)
+
+            if (camera.transform.position == cameraMoveEnd)
+            //if (deltaX <= .4f && deltaY <= .4f)
+            {
+                camera.transform.position = cameraMoveEnd;
+                state = CombatSceneState.Combat;
+            }
+        }
+
+
+
+
+
+
         if (state == CombatSceneState.ClosingDialogue)
         {
             // TODO
@@ -445,6 +468,19 @@ public abstract class CombatSceneController : MonoBehaviour
     }
 
     /// <summary>
+    /// Sets the camera to damp towards a possible target of one of the players' abilities
+    /// </summary>
+    /// <param name="targetPosition">The target position</param>
+    public static void SelectTarget(Vector3 targetPosition)
+    {
+        //moves camera to the next character
+        state = CombatSceneState.ChoosingTarget;
+        cameraMoveEnd = targetPosition;
+        cameraMoveEnd.z = -10;
+        dampVelocity = Vector3.zero;
+    }
+
+    /// <summary>
     /// Sorts all lists of combatants
     /// </summary>
     protected void SortLists()
@@ -481,7 +517,9 @@ public abstract class CombatSceneController : MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// Sets the canvas to display the current dialogue node
+    /// </summary>
     protected void DisplayCurrentDialogueNode()
     {
         if(dialogueSequenceIndex >= openingDialogueSequence.Nodes.Count)
@@ -489,7 +527,7 @@ public abstract class CombatSceneController : MonoBehaviour
             dialogueSprite.transform.parent.gameObject.SetActive(false);
 
             //begin the combat stage of the scene
-            state = CombatSceneState.Combat;
+            state = CombatSceneState.Combat; //there may dialoge at stages other than the beginning of map, this will need to change********************************************************************************************************************
 
             //set up the first char to go
             camera.transform.position = new Vector3(currentTurnBlock[0].transform.position.x, currentTurnBlock[0].transform.position.y, -10);
@@ -497,10 +535,14 @@ public abstract class CombatSceneController : MonoBehaviour
             return;
         }
 
+        //set all relevant UI pieces
         DialogueNode node = openingDialogueSequence[dialogueSequenceIndex];
         dialogueSprite.sprite = node.Portratit;
         dialogueText.text = node.Text;
     }
 
+    /// <summary>
+    /// Checks to see if the map objective has been completed
+    /// </summary>
     protected abstract void CheckObjective();
 }

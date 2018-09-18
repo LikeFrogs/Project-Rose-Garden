@@ -5,7 +5,12 @@ using UnityEngine.UI;
 
 public class OverlayCanvas : MonoBehaviour
 {
-    [SerializeField] private Text text;
+    private static Text text;
+
+    private void Start()
+    {
+        text = gameObject.GetComponent<Text>();
+    }
 
     public void InspectCharacter(CombatChar character)
     {
@@ -22,7 +27,19 @@ public class OverlayCanvas : MonoBehaviour
                "Level: " + character.Level;
     }
 
+    public static void CombatForecast(CombatChar target, CombatChar attacker, int expectedTargetDamage, int expectedAttackerDamage, int etc)
+    {
+        text.enabled = true;
+
+        text.text = "Displaying combat forecast";
+    }
+
     public void HideUI()
+    {
+        text.enabled = false;
+    }
+
+    public static void StaticHideUI()
     {
         text.enabled = false;
     }

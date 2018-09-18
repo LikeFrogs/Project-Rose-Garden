@@ -166,3 +166,4 @@ D:\Rose_Garden\Temp\bin\Debug\UnityEngine.UIAutomation.xml
 D:\Rose_Garden\Temp\bin\Debug\UnityEngine.GoogleAudioSpatializer.xml
 D:\Rose_Garden\Temp\bin\Debug\UnityEngine.SpatialTracking.xml
 D:\Rose_Garden\obj\Debug\Assembly-CSharp.csproj.CopyComplete
+D:\Rose_Garden\Temp\bin\Debug\UnityEngine.WebGLModule.dll

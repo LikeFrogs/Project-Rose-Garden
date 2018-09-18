@@ -122,17 +122,12 @@ public class NewTestClass : PlayerCharacter
     int targetIndex;
     GameObject selectedIcon;
     Vector3 selectedPosition;
-
-
     #endregion
 
     //not finished
     #region Equipment
     private Pistol rangedWeapon;
     private Sword meleeWeapon;
-
-
-
     #endregion
 
     /// <summary>
@@ -149,7 +144,7 @@ public class NewTestClass : PlayerCharacter
         }
         else
         {
-            rangedWeapon = new Pistol(5, 3, 3);
+            rangedWeapon = new Pistol(5, /*3*/10, 3);
         }
 
         meleeWeapon = new Sword(5);
@@ -188,6 +183,9 @@ public class NewTestClass : PlayerCharacter
 
                 //sets the newly selected square to have selected UI
                 selectedIcon.GetComponent<RectTransform>().anchoredPosition = selectedPosition;
+
+                CombatSceneController.SelectTarget(selectedPosition);
+                OverlayCanvas.CombatForecast(null, null, 0, 0, 0);
             }
 
             //confirms the action
@@ -207,6 +205,8 @@ public class NewTestClass : PlayerCharacter
 
                 //bring up the action menu again
                 ActionMenu();
+
+                OverlayCanvas.StaticHideUI();
             }
         }
     }
@@ -379,6 +379,7 @@ public class NewTestClass : PlayerCharacter
 
         //calculates damage to apply and calls TakeDamage()
         int damage = attack + rangedWeapon.Damage - target.Defense; //fix this calculation
+        //probably calculate the damage of the attack in the original action method and store it as a field and just use that field here in case of differing damage calculations***********************************************************************************************************************
         rangedWeapon.Ammo -= 1;
 
         int exp = target.ExpForKill;
